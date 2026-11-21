@@ -4,8 +4,8 @@ All notable changes to Hevy to SparkyFitness. Versions follow the `x.y` scheme d
 
 ## 1.2
 
-- New: points out Hevy exercises that look like the same one, written with other capitals, hyphens or spaces, as a plural, or with the words in another order (*Pull Up*, *Pull-up*, *Pullups*; *Bench Press (Barbell)*, *Barbell Bench Press*). `--list-exercises` lists them, and the conversion warns while they would stay separate exercises. Giving them the same `sparkyfitness_name` joins them into one exercise before importing, since SparkyFitness can't merge exercises afterwards.
-- New: the easy version's table joins look-alike exercises with one click and shows which Hevy exercises become one exercise in SparkyFitness.
+- New: points out Hevy exercises that look like the same one, written with other capitals, accents, hyphens or spaces, as a plural, or with the end of the name moved to the front (*Pull Up*, *Pull-up*, *Pullups*; *Bench Press (Barbell)*, *Barbell Bench Press*). Names whose words only differ in order (*Cable Twist (Up to down)*, *(Down to up)*), whose numbers differ, or of which only one is assisted are not grouped. `--list-exercises` lists them, and the conversion warns while they would stay separate exercises, unless each of them was given a name on purpose. Giving them the same `sparkyfitness_name` joins them into one exercise before importing, since SparkyFitness can't merge exercises afterwards.
+- New: the easy version's table joins look-alike exercises with one click, from the row whose name you want to keep, and shows which Hevy exercises become one exercise in SparkyFitness. A name chosen with a button (a suggestion, or Fill in the suggestions) goes to every Hevy exercise joined with it. Conversion warnings now open the "What was converted" section.
 
 ## 1.1
 

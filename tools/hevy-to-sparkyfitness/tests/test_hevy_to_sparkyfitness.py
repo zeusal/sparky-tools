@@ -510,20 +510,45 @@ class SimilarNamesTests(TempDirTestCase):
         names = ["Pull Up", "Pull-up", "Pullups", "pull ups", "Pull Up (Assisted)",
                  "Bench Press (Barbell)", "Barbell Bench Press", "Bench Press (Dumbbell)",
                  "Lat Pulldown (Cable)", "Lat Pull Down (Cable)", "Crunches", "Crunch",
-                 "Press", "Plank", "💪", "🔥", "引体向上"]
+                 "Press", "Plank", "\U0001f4aa", "\U0001f525", "\u5f15\u4f53\u5411\u4e0a"]
         self.assertEqual(hevy.similar_names(names), [
             ["Barbell Bench Press", "Bench Press (Barbell)"],
             ["Crunch", "Crunches"],
             ["Lat Pull Down (Cable)", "Lat Pulldown (Cable)"],
             ["Pull Up", "pull ups", "Pull-up", "Pullups"],
         ])
-        self.assertEqual(hevy.similar_names(["Squat", "Front Squat", "Squat (Smith Machine)"]), [])
+
+    def test_more_look_alikes(self):
+        for pair in (["Chest Fly (Dumbbell)", "Dumbbell Chest Flies"],
+                     ["Reverse Fly", "Reverse Flyes"],
+                     ["Farmer's Walk", "Farmers Walk"],
+                     ["Run 1,5 km", "Run 1.5 km"],
+                     ["Deadlift (Trap bar)", "Trap Bar Deadlift"],
+                     ["Pull Up (Weighted)", "Weighted Pull Up"],
+                     ["5 x 5 Squat", "5x5 Squat"]):
+            self.assertEqual(hevy.similar_names(pair), [pair], pair)
+
+    def test_different_exercises_stay_apart(self):
+        for pair in (["Cable Twist (Down to up)", "Cable Twist (Up to down)"],
+                     ["Cable Fly High to Low", "Cable Fly Low to High"],
+                     ["Push Up to Pull Up", "Pull Up to Push Up"],
+                     ["Squat 5 x 3", "Squat 3 x 5"],
+                     ["Squat (Tempo 3-1-1)", "Squat (Tempo 1-3-1)"],
+                     ["Run 1.5 km", "Run 15 km"],
+                     ["Pull Up (Band)", "Band Pull Up"],
+                     ["Squat", "Front Squat", "Squat (Smith Machine)"],
+                     # Back squat and hack squat in Japanese: the voicing mark matters.
+                     ["\u30d0\u30c3\u30af\u30b9\u30af\u30ef\u30c3\u30c8",
+                      "\u30cf\u30c3\u30af\u30b9\u30af\u30ef\u30c3\u30c8"]):
+            self.assertEqual(hevy.similar_names(pair), [], pair)
 
     def test_name_words(self):
         self.assertEqual(hevy.name_words("Pull-Ups"), ["pull", "up"])
         self.assertEqual(hevy.name_words("Crunches"), ["crunch"])
         self.assertEqual(hevy.name_words("Cross Press"), ["cross", "press"])
-        self.assertEqual(hevy.name_words("Élévation latérale"), ["elevation", "laterale"])
+        self.assertEqual(hevy.name_words("Dumbbell Chest Flies"), ["dumbbell", "chest", "fly"])
+        self.assertEqual(hevy.name_words("\u00c9l\u00e9vation lat\u00e9rale"), ["elevation", "laterale"])
+        self.assertEqual(hevy.name_words("Run 1,5 km."), ["run", "1.5", "km"])
 
     def test_listing_names_look_alikes_until_they_share_a_name(self):
         export = self.copy_fixture("similar_names.csv", "export.csv")
@@ -549,6 +574,14 @@ class SimilarNamesTests(TempDirTestCase):
         self.assertIn("stay separate exercises: Barbell Bench Press = Bench Press (Barbell). ", out)
         code, out, err = run(FIXTURES / "similar_names.csv", *KG_KM, "--exercise-map",
                              FIXTURES / "similar_names_table.csv", "-o", self.tmp / "c.csv")
+        self.assertEqual(code, 0, err)
+        self.assertNotIn("look like the same exercise", out)
+        # Names chosen on purpose for each of them: no warning, even when apart.
+        table = self.tmp / "apart.csv"
+        table.write_text("hevy_name,sparkyfitness_name\nPull-up,Pull-up\nPull Up,Chin-up\n"
+                         "Barbell Bench Press,Bench Press (Barbell)\n", encoding="utf-8")
+        code, out, err = run(FIXTURES / "similar_names.csv", *KG_KM, "--exercise-map", table,
+                             "-o", self.tmp / "d.csv")
         self.assertEqual(code, 0, err)
         self.assertNotIn("look like the same exercise", out)
         # Joined on one day: one entry, with its sets numbered 1..n.

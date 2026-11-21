@@ -98,32 +98,55 @@ export default async function ({ browser, baseUrl, toolDir }) {
     },
   });
 
-  // Look-alike exercises: joined with one click, from either row, the page
-  // gives the same file as the command line with a table that joins them.
+  // Look-alike exercises: the row whose name is kept joins the other with one
+  // click, and the page gives the same file as the command line with a table
+  // that joins them.
+  const nameInput = (page, hevy) => page.getByLabel(`SparkyFitness name for ${hevy}`, { exact: true });
+  const hintOf = async (page, hevy) =>
+    page.locator(`#${await nameInput(page, hevy).getAttribute('aria-describedby')}`);
   await check('similar_names.csv', 'similar_names_joined__kg_km.csv', {
     after: async (page) => {
-      const hintOf = async (hevy) => page.locator(`#${await page.getByLabel(`SparkyFitness name for ${hevy}`,
-        { exact: true }).getAttribute('aria-describedby')}`);
-      const pullUp = await hintOf('Pull-up');
-      assert.match(await pullUp.textContent(), /Looks like the same exercise as “Pull Up”/);
-      await pullUp.getByRole('button', { name: 'Join with “Pull Up”' }).click();
-      assert.equal(await page.getByLabel('SparkyFitness name for Pull-up', { exact: true }).inputValue(), 'Pull Up');
-      assert.match(await (await hintOf('Pull Up')).textContent(), /Joined with “Pull-up” from Hevy/);
-      assert.equal(await page.getByLabel('SparkyFitness name for Pull-up', { exact: true })
-        .evaluate((el) => el === document.activeElement), true, 'focus stays in the row');
+      const pullUp = await hintOf(page, 'Pull Up');
+      assert.match(await pullUp.textContent(), /Looks like the same exercise as “Pull-up”/);
+      assert.match(await (await hintOf(page, 'Pull-up')).textContent(), /Looks like the same exercise as “Pull Up”/);
+      await pullUp.getByRole('button', { name: 'Use this name for “Pull-up” too' }).click();
+      assert.equal(await nameInput(page, 'Pull-up').inputValue(), 'Pull Up');
+      assert.match(await (await hintOf(page, 'Pull Up')).textContent(), /Joined with “Pull-up” from Hevy/);
+      assert.equal(await nameInput(page, 'Pull Up').evaluate((el) => el === document.activeElement), true,
+        'focus stays in the row');
 
-      const bench = await hintOf('Bench Press (Barbell)');
-      await bench.getByRole('button', { name: 'Join “Barbell Bench Press” with this one' }).click();
-      assert.equal(await page.getByLabel('SparkyFitness name for Barbell Bench Press', { exact: true }).inputValue(),
-        'Bench Press (Barbell)');
+      // Right after typing in the row, the first click on its button counts.
+      await nameInput(page, 'Bench Press (Barbell)').fill('Bench Press (Barbell)');
+      await (await hintOf(page, 'Bench Press (Barbell)'))
+        .getByRole('button', { name: 'Use this name for “Barbell Bench Press” too' }).click();
+      assert.equal(await nameInput(page, 'Barbell Bench Press').inputValue(), 'Bench Press (Barbell)');
       assert.doesNotMatch(await page.textContent('#names-tools'), /Looks like the same exercise/);
       assert.match(await page.textContent('#names-summary'), /4 joined into 2/);
-      assert.equal(await (await hintOf('Pull Up (Assisted)')).locator('.join').count(), 0,
+      assert.equal(await (await hintOf(page, 'Pull Up (Assisted)')).locator('.join').count(), 0,
         'an assisted variant is not the same exercise');
     },
   });
 
-  // Before joining, the summary says how to join them on this page.
+  // Joining from the other row keeps that row's name, and a name chosen
+  // later with a button goes to both joined exercises.
+  {
+    const { page, context } = await freshPage();
+    try {
+      await open(page, 'similar_names.csv');
+      await (await hintOf(page, 'Pull-up')).getByRole('button', { name: 'Use this name for “Pull Up” too' }).click();
+      assert.equal(await nameInput(page, 'Pull Up').inputValue(), 'Pull-up');
+      assert.equal(await nameInput(page, 'Pull-up').inputValue(), '');
+      const suggestion = (await hintOf(page, 'Pull-up')).getByRole('button', { name: /^Use “/ });
+      const chosen = (await suggestion.textContent()).replace(/^Use “|”$/g, '');
+      await suggestion.click();
+      assert.equal(await nameInput(page, 'Pull-up').inputValue(), chosen);
+      assert.equal(await nameInput(page, 'Pull Up').inputValue(), chosen, 'the joined exercise follows');
+    } finally {
+      await context.close();
+    }
+  }
+
+  // Before joining, the summary says how to join them on this page, and is open.
   {
     const { page, context } = await freshPage();
     try {
@@ -133,6 +156,7 @@ export default async function ({ browser, baseUrl, toolDir }) {
       const summary = await page.textContent('#summary');
       assert.match(summary, /look like the same exercise but stay separate exercises: Barbell Bench Press = Bench Press \(Barbell\); Pull Up = Pull-up\. To join them, give each group the same SparkyFitness name in step 3/);
       assert.doesNotMatch(summary, /sparkyfitness_name|exercise table|--/);
+      assert.equal(await page.isVisible('#summary'), true, 'warnings are shown without opening the section');
     } finally {
       await context.close();
     }

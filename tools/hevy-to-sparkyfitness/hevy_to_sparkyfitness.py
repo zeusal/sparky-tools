@@ -161,22 +161,51 @@ def is_assisted(name):
 
 def name_words(name):
     """The words of an exercise name, for comparing names: lower case, no
-    accents, plurals made singular ('Pull-Ups' -> ['pull', 'up'])."""
+    accents or apostrophes, plurals made singular, numbers kept whole
+    ('Pull-Ups' -> ['pull', 'up']; "Farmer's Walk" -> ['farmer', 'walk'];
+    'Run 1.5 km' -> ['run', '1.5', 'km'])."""
+    text = unicodedata.normalize("NFKD", name.lower())
+    # Only Latin, Greek and Cyrillic accents go; other marks (Japanese voicing,
+    # Indic vowel signs) are part of the letter.
+    text = "".join(c for c in text if not "\u0300" <= c <= "\u036f")
+    text = unicodedata.normalize("NFC", text).replace("'", "").replace("\u2019", "")
+    tokens, word = [], ""
+    for c in text:
+        if (c.isalnum() or unicodedata.category(c).startswith("M")
+                or (c in ".," and word[-1:].isdigit())):
+            word += c
+        elif word:
+            tokens.append(word)
+            word = ""
+    if word:
+        tokens.append(word)
     words = []
-    for w in re.findall(r"[^\W_]+", plain(name)):
-        if len(w) > 4 and re.search(r"(ch|sh|x|ss)es$", w):
-            w = w[:-2]
-        elif len(w) > 2 and w.endswith("s") and not w.endswith("ss"):
-            w = w[:-1]
-        words.append(w)
+    for w in tokens:
+        w = w.rstrip(".,")
+        if w[:1].isdigit():
+            w = w.replace(",", ".")  # 1,5 and 1.5 are the same number
+        elif w.isalpha():
+            if len(w) > 4 and w.endswith("ies"):
+                w = w[:-3] + "y"  # flies
+            elif len(w) > 4 and re.search(r"(ch|sh|x|ss)es$", w):
+                w = w[:-2]  # crunches, presses
+            elif len(w) > 2 and w.endswith("s") and not w.endswith("ss"):
+                w = w[:-1]
+            if len(w) > 3 and w.endswith("ye"):
+                w = w[:-1]  # flye
+        if w:
+            words.append(w)
     return words
 
 
 def similar_names(names):
     """Groups of names that are probably one exercise written differently:
-    other capitals, accents, hyphens or spaces, a plural, or the same words in
-    another order ('Pull Up', 'Pull-ups', 'Pullup'; 'Bench Press (Barbell)',
-    'Barbell Bench Press'). Each group is sorted; groups by their first name."""
+    other capitals, accents, hyphens or spaces, a plural, or the end of the
+    name moved to the front ('Pull Up', 'Pull-ups', 'Pullup'; 'Bench Press
+    (Barbell)', 'Barbell Bench Press'). Words keep their order otherwise, so
+    'Cable Twist (Up to down)' and '(Down to up)' stay apart, and so do
+    assisted and unassisted names. Each group is sorted; groups by their
+    first name."""
     parent = {}
 
     def root(name):
@@ -191,7 +220,10 @@ def similar_names(names):
         words = name_words(name)
         if not words:
             continue
-        for key in (("same words",) + tuple(sorted(words)), ("written together", "".join(words))):
+        assisted = is_assisted(name)
+        turned = min(tuple(words[i:] + words[:i]) for i in range(len(words)))
+        for key in (("same words", assisted) + turned,
+                    ("written together", assisted, "".join(words))):
             if key in first_with:
                 parent[root(name)] = root(first_with[key])
             else:
@@ -203,9 +235,11 @@ def similar_names(names):
                   key=lambda g: g[0].lower())
 
 
-def apart(groups, name_of):
-    """The groups whose names don't all end up as one exercise."""
-    return [g for g in groups if len({name_of(n) for n in g}) > 1]
+def apart(groups, name_of, chosen=()):
+    """The groups whose names don't all end up as one exercise, unless every
+    name in the group was given its SparkyFitness name on purpose."""
+    return [g for g in groups
+            if len({name_of(n) for n in g}) > 1 and not all(n in chosen for n in g)]
 
 
 def list_groups(groups):
@@ -456,7 +490,8 @@ def write_exercise_list(parsed, path, input_path, assisted_positive):
           "empty to keep the Hevy name. Several Hevy names can share one "
           "SparkyFitness name: their sets become one exercise. In Excel, save it as "
           "'CSV UTF-8'. Then run the conversion again with --exercise-map " + shown)
-    alike = apart(similar_names(traits), lambda n: filled.get(n) or n)
+    alike = apart(similar_names(traits), lambda n: filled.get(n) or n,
+                  {n for n in traits if filled.get(n)})
     if alike:
         print("These Hevy names look like the same exercise: " + list_groups(alike)
               + ". To make each group one exercise in SparkyFitness, give its names "
@@ -676,7 +711,7 @@ def main():
                       f"{h} -> {mapping[h]} (but {mapping[h]} -> {mapping[mapping[h]]})"
                       for h in chained))
     hevy_to_name = {p["hevy_name"]: p["name"] for p in parsed}
-    alike = apart(similar_names(hevy_to_name), hevy_to_name.get)
+    alike = apart(similar_names(hevy_to_name), hevy_to_name.get, mapping)
     if alike:
         print("Warning: these Hevy names look like the same exercise but stay separate "
               "exercises: " + list_groups(alike) + ". To join them, give each group the "

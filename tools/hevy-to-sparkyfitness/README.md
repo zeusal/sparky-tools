@@ -92,7 +92,7 @@ Written with a negative weight (assistance): Pull Up (Assisted). If SparkyFitnes
 
 SparkyFitness reuses one of your exercises only when its name matches exactly, capitals included. Any other name becomes a new exercise in your library, named as in Hevy (for example *Bench Press (Barbell)*). SparkyFitness can't merge two exercises afterwards, and its progress charts follow one exercise.
 
-- **New to SparkyFitness?** Keep the Hevy names and keep logging under them after the import.
+- **New to SparkyFitness?** Keep the Hevy names and keep logging under them after the import, unless the conversion warns that two Hevy exercises look like the same one: join those first (see below), because SparkyFitness can't merge them later.
 - **Already logging under other names?** Use an exercise table, so your old and new history end up under the same exercise:
 
 The commands below are for macOS and Linux with an app export. On Windows, write `py` instead of `python3`; with a website export, use `workouts.csv` and `workouts_exercises.csv`.
@@ -112,7 +112,7 @@ The commands below are for macOS and Linux with an app export. On Windows, write
    | `sets`, `last_done` | How often and how recently you did it, to help you decide. |
    | `kind` | How the script will set the exercise up: `weights`, `bodyweight`, `assisted`, `cardio` or `timed`. |
 
-2. Fill in `sparkyfitness_name` in Excel, LibreOffice, Numbers or a text editor. Use the names exactly as SparkyFitness shows them, capitals included. Its exercise list doesn't let you select text, so type them, or open an exercise (double-click it, or tap it on a phone) and copy the name from its edit window. Several Hevy names can point to the same exercise: their sets become one exercise in SparkyFitness. `--list-exercises` and the conversion name the Hevy exercises that look like the same one (other capitals, hyphens or spaces, a plural, or the words in another order, such as *Pull Up* and *Pull-up*), so you can join them before importing. Save as **CSV UTF-8**. If Excel shows each row in a single column, open the file with *Data → From Text/CSV*, or use LibreOffice or Google Sheets.
+2. Fill in `sparkyfitness_name` in Excel, LibreOffice, Numbers or a text editor. Use the names exactly as SparkyFitness shows them, capitals included. Its exercise list doesn't let you select text, so type them, or open an exercise (double-click it, or tap it on a phone) and copy the name from its edit window. Several Hevy names can point to the same exercise: their sets become one exercise in SparkyFitness. `--list-exercises` and the conversion name the Hevy exercises that look like the same one (other capitals, hyphens or spaces, a plural, or the end of the name moved to the front, such as *Pull Up* and *Pull-up*, or *Bench Press (Barbell)* and *Barbell Bench Press*), so you can join them before importing. Once each name in such a group has a `sparkyfitness_name`, the warning stops, even if you keep them apart on purpose. Save as **CSV UTF-8**. If Excel shows each row in a single column, open the file with *Data → From Text/CSV*, or use LibreOffice or Google Sheets.
 3. Convert with the table:
 
    ```bash

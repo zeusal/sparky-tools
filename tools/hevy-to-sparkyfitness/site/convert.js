@@ -362,7 +362,15 @@
     joinHint(row, hint, text);
   }
 
+  // A name chosen with a button goes to every Hevy exercise written with the
+  // same name, so exercises that were joined stay one.
+  function renameGroup(row, value) {
+    (state.byName.get(written(row)) || [row]).slice().forEach(function (r) { setTarget(r, value); });
+  }
+
   // Which Hevy exercises become one, and which look like one but don't yet.
+  // The button is on every row of a look-alike group, so the person picks
+  // the name to keep by picking the row.
   function joinHint(row, hint, text) {
     var box = document.createElement('div');
     box.className = 'join';
@@ -371,25 +379,16 @@
     if (together.length) {
       text('Joined with ' + quoted(together) + ' from Hevy: one exercise in SparkyFitness.', box);
     }
-    var alike = state.lookAlike.get(row.hevy) || [];
-    var lead = alike[0];
-    if (lead && lead !== row && written(lead) !== name) {
-      text('Looks like the same exercise as “' + lead.hevy + '”' +
-        (lead.target ? ' (written as “' + lead.target + '”). ' : '. '), box);
-      box.appendChild(button('Join with “' + lead.hevy + '”', function () {
-        setTarget(row, written(lead));
+    var apart = (state.lookAlike.get(row.hevy) || []).filter(function (r) { return written(r) !== name; });
+    if (apart.length) {
+      text('Looks like the same exercise as ' + apart.map(function (r) {
+        return '“' + r.hevy + '”' + (r.target ? ' (written as “' + r.target + '”)' : '');
+      }).join(', ') + '. ', box);
+      box.appendChild(button(apart.length === 1 ? 'Use this name for “' + apart[0].hevy + '” too'
+        : 'Use this name for them too', function () {
+        apart.forEach(function (r) { renameGroup(r, name); });
         row.input.focus();
       }));
-    } else if (lead === row) {
-      var apart = alike.filter(function (r) { return written(r) !== name; });
-      if (apart.length) {
-        text('Looks like the same exercise as ' + quoted(apart) + '. ', box);
-        box.appendChild(button(apart.length === 1 ? 'Join “' + apart[0].hevy + '” with this one'
-          : 'Join them with this one', function () {
-          apart.forEach(function (r) { setTarget(r, name); });
-          row.input.focus();
-        }));
-      }
     }
     if (box.childNodes.length) hint.appendChild(box);
   }
@@ -406,7 +405,7 @@
       text('Imported as “' + row.hevy + '”. ');
       if (row.suggestion) {
         hint.appendChild(button('Use “' + row.suggestion.name + '”', function () {
-          setTarget(row, row.suggestion.name);
+          renameGroup(row, row.suggestion.name);
           row.input.focus();
         }));
         text(row.suggestion.source === 'yours' ? ' from your names' : ' from Free Exercise DB');
@@ -420,12 +419,12 @@
       var exact = state.userLower.get(value.toLowerCase());
       hint.classList.add('warn');
       text('Capitals differ from your exercise “' + exact + '”. ');
-      hint.appendChild(button('Use “' + exact + '”', function () { setTarget(row, exact); row.input.focus(); }));
-    } else if ((state.byName.get(value) || []).some(function (r) { return !r.target; })) {
-      text('Imported as “' + value + '”.');
+      hint.appendChild(button('Use “' + exact + '”', function () { renameGroup(row, exact); row.input.focus(); }));
     } else if (state.userNames.length) {
       hint.classList.add('warn');
       text('Not in your list of SparkyFitness names. Check the spelling, or it becomes a new exercise.');
+    } else if ((state.byName.get(value) || []).some(function (r) { return !r.target; })) {
+      text('Imported as “' + value + '”.');
     } else if (state.fedbSet.has(value)) {
       text('Free Exercise DB name.');
     } else {
@@ -492,7 +491,17 @@
       input.autocomplete = 'off';
       input.spellcheck = false;
       input.value = row.target;
-      input.addEventListener('change', function () { setTarget(row, input.value); });
+      input.addEventListener('change', function () {
+        if (input.value.trim() === row.target) {
+          // Typing already updated the hints: only remember the name. Drawing
+          // them again here would replace a button that is being clicked.
+          input.value = row.target;
+          if (row.target) saved.targets[row.hevy] = row.target; else delete saved.targets[row.hevy];
+          persist();
+          return;
+        }
+        setTarget(row, input.value);
+      });
       input.addEventListener('input', function () {
         els.result.hidden = true;
         var before = written(row);
@@ -722,6 +731,8 @@
       els.download.download = filename;
       els.download.textContent = 'Download ' + filename;
       els.summary.textContent = webify(result.out);
+      // Warnings are worth reading before importing.
+      els.summary.closest('details').open = /^Warning:/m.test(els.summary.textContent);
       els.result.hidden = false;
       els.download.focus();
     }).catch(function (error) {
@@ -782,8 +793,8 @@
     state.rows.forEach(function (row) {
       // Only close matches; anything less is left for the person to choose.
       if (!row.target && row.suggestion && row.suggestion.source === 'yours' && row.suggestion.score >= 0.9) {
-        setTarget(row, row.suggestion.name);
-        used++;
+        used += (state.byName.get(written(row)) || [row]).length;
+        renameGroup(row, row.suggestion.name);
       }
     });
     updateSummary();
