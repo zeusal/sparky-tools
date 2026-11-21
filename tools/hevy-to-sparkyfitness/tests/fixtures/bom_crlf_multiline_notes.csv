@@ -1,0 +1,4 @@
+﻿"title","start_time","end_time","description","exercise_title","superset_id","exercise_notes","set_index","set_type","weight_kg","reps","distance_km","duration_seconds","rpe"
+"Push","Dec 27, 2025, 12:04 PM","Dec 27, 2025, 1:00 PM","line1
+line2","Bench Press (Barbell)",,"note ""quoted"",
+with comma",0,"warmup",60,5,,,7

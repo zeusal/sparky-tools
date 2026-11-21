@@ -1,0 +1,7 @@
+{
+  "name": "Hevy to SparkyFitness",
+  "summary": "Converts a Hevy workout export (CSV, free or Pro accounts) into a file that SparkyFitness's Workout History importer reads, keeping sets, units and exercise types.",
+  "script": "hevy_to_sparkyfitness.py",
+  "requires": "Python 3.8+",
+  "status": "stable"
+}

@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hevy to SparkyFitness · Sparky Tools</title>
+<meta name="description" content="Step-by-step guide to move your Hevy workout history, from a free or Pro account, into SparkyFitness.">
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="../">Sparky Tools</a>
+    <nav aria-label="Links">
+      <a href="{{TOOL_URL}}">Documentation</a>
+      <a href="{{REPO_URL}}">GitHub</a>
+    </nav>
+  </div>
+</div>
+
+<main class="page">
+
+<header class="intro">
+  <span class="eyebrow">Step-by-step guide</span>
+  <h1>Move your Hevy history to SparkyFitness</h1>
+  <p class="lead">Hevy lets every account, free or Pro, export its workouts as a CSV file. SparkyFitness can import workout history from CSV, but not Hevy's file as it comes: the dates carry a time of day and the columns have other names. A small converter rewrites the file on your own computer, and then SparkyFitness imports it like any other.</p>
+  <div class="shift" aria-label="Example of what the converter changes">
+    <div><small>Hevy export</small><code>"5 Dec 2025, 11:37", "Bench Press (Barbell)", set_index 0, weight_lbs 135</code></div>
+    <span class="arrow" aria-hidden="true">→</span>
+    <div><small>Converted for SparkyFitness</small><code>2025-12-05, Bench Press (Barbell), set 1, weight 61.23 (kg)</code></div>
+  </div>
+</header>
+
+<section class="stack" aria-labelledby="need">
+  <h2 id="need">What you need</h2>
+  <div class="needs">
+    <div><strong>Your Hevy export</strong>Free plan is fine. No Hevy Pro or API key.</div>
+    <div><strong>A computer</strong>Windows, Mac or Linux, with Python 3.8 or newer.</div>
+    <div><strong>SparkyFitness on the web</strong>The import screen is in the web app.</div>
+    <div><strong>About 15 minutes</strong>Longer if you match exercise names by hand.</div>
+  </div>
+  <p>Your workout file never leaves your computer while it is converted. The converter only reads it and writes a new file next to it.</p>
+</section>
+
+<section class="setup" aria-labelledby="setup-title">
+  <div class="stack">
+    <h2 id="setup-title">Your setup</h2>
+    <p class="status">Pick your options once. Every command on this page updates to match.</p>
+  </div>
+  <div class="setup-grid">
+    <fieldset>
+      <legend>Your computer</legend>
+      <div class="seg">
+        <label><input type="radio" name="os" id="os-win" value="win"><span>Windows</span></label>
+        <label><input type="radio" name="os" id="os-unix" value="unix"><span>Mac or Linux</span></label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Exported from</legend>
+      <div class="seg">
+        <label><input type="radio" name="src" id="src-app" value="app"><span>Hevy app</span></label>
+        <label><input type="radio" name="src" id="src-web" value="web"><span>hevy.com</span></label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>SparkyFitness weight unit</legend>
+      <div class="seg">
+        <label><input type="radio" name="weight" id="w-kg" value="kg"><span>kg</span></label>
+        <label><input type="radio" name="weight" id="w-lbs" value="lbs"><span>lbs</span></label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>SparkyFitness distance unit</legend>
+      <div class="seg">
+        <label><input type="radio" name="distance" id="d-km" value="km"><span>km</span></label>
+        <label><input type="radio" name="distance" id="d-miles" value="miles"><span>miles</span></label>
+      </div>
+    </fieldset>
+  </div>
+  <label class="check" for="use-table"><input type="checkbox" id="use-table"><span>I filled in an exercise table (step 4) and want the conversion to use it.</span></label>
+</section>
+
+<ol class="steps" aria-label="Steps">
+
+<li class="step" id="step-export">
+  <span class="num" aria-hidden="true">1</span>
+  <div class="stack">
+    <h2>Export your workouts from Hevy</h2>
+    <ul>
+      <li><strong>In the app:</strong> <span class="path">Profile → Settings → Export &amp; Import Data → Export Data → Export Workouts</span>. You get <code>workout_data.csv</code>. Save or send it to your computer.</li>
+      <li><strong>Or on the website:</strong> sign in at hevy.com, open <a href="https://hevy.com/settings?export">hevy.com/settings?export</a> and press <span class="path">Export Workout Data</span>. You get <code>workouts.csv</code>.</li>
+    </ul>
+    <p>The app writes exercise names in the app's language; the website always uses English names. If your app is not in English, the website export is usually the better choice.</p>
+    <p class="note"><strong>Don't save the file in Excel or Numbers.</strong> Opening it to look is fine, but saving changes the dates and the emojis. If you already did, export again.</p>
+  </div>
+</li>
+
+<li class="step" id="step-units">
+  <span class="num" aria-hidden="true">2</span>
+  <div class="stack">
+    <h2>Check your units in SparkyFitness</h2>
+    <p>Open <span class="path">Settings → Preferences</span> and look at <span class="path">Weight Unit</span> and <span class="path">Distance Unit</span>. SparkyFitness reads imported weights and distances in those units, so the converter writes them that way, whatever units you used in Hevy.</p>
+    <p>Set the same units in <a href="#setup-title">Your setup</a> above.</p>
+  </div>
+</li>
+
+<li class="step" id="step-get">
+  <span class="num" aria-hidden="true">3</span>
+  <div class="stack">
+    <h2>Get Python and the converter</h2>
+    <ul class="os-win">
+      <li>Install Python from <a href="https://www.python.org/downloads/">python.org/downloads</a>. On the first installer screen, tick <strong>Add python.exe to PATH</strong>.</li>
+    </ul>
+    <ul class="os-unix">
+      <li>Open Terminal and run <code>python3 --version</code>. If it prints 3.8 or higher you're set. If not, install Python from <a href="https://www.python.org/downloads/">python.org/downloads</a>.</li>
+    </ul>
+    <div class="actions">
+      <a class="btn primary" href="{{SCRIPT}}" download>Download {{SCRIPT}}</a>
+      <a class="btn secondary" href="{{TOOL_URL}}">Read the code and documentation</a>
+    </div>
+    <p>It's a single Python file that uses only Python's standard library. If your browser asks whether to keep it, choose <span class="path">Keep</span>.</p>
+    <p>Put <code>hevy_to_sparkyfitness.py</code> and <code data-file="input">workout_data.csv</code> in the same folder, then open a terminal in that folder:</p>
+    <ul class="os-win">
+      <li>Open the folder in File Explorer, click the address bar, type <code>cmd</code> and press <kbd>Enter</kbd>.</li>
+    </ul>
+    <ul class="os-unix">
+      <li>Open Terminal, type <code>cd</code> followed by a space, drag the folder onto the window and press <kbd>Return</kbd>.</li>
+    </ul>
+  </div>
+</li>
+
+<li class="step optional" id="step-table">
+  <span class="num" aria-hidden="true">4</span>
+  <div class="stack">
+    <h2>Use exercises you already have <span class="tag">Optional</span></h2>
+    <p>SparkyFitness reuses one of your exercises only when the name matches exactly, capitals included. Any other name becomes a new exercise in your library, named as in Hevy, for example <em>Bench Press (Barbell)</em>. SparkyFitness can't merge two exercises later, and progress charts follow one exercise.</p>
+    <ul>
+      <li><strong>New to SparkyFitness?</strong> Skip this step and keep logging under the Hevy names after the import.</li>
+      <li><strong>Already logging in SparkyFitness under other names?</strong> Match the names now, so your old and new history end up under the same exercise.</li>
+    </ul>
+    <p>Make the table:</p>
+    <div class="cmd" data-cmd="list"><pre>python3 hevy_to_sparkyfitness.py workout_data.csv --list-exercises</pre><button type="button" class="copy">Copy</button></div>
+    <p>This writes <code data-file="table">workout_data_exercises.csv</code>, with one row for each exercise in your Hevy history. Open it in Excel, LibreOffice or Numbers:</p>
+    <ul>
+      <li>In <code>sparkyfitness_name</code>, type the exact name of the SparkyFitness exercise to use. Copy it from SparkyFitness to get the spelling and capitals right.</li>
+      <li>Leave it empty to keep the Hevy name. Several Hevy names can point to the same exercise.</li>
+      <li>The <code>sets</code>, <code>last_done</code> and <code>kind</code> columns are there to help you decide. You only need to fill in the exercises you care about.</li>
+      <li>Save it as <strong>CSV UTF-8</strong> (in Excel: <span class="path">File → Save As → CSV UTF-8 (Comma delimited)</span>).</li>
+      <li>If Excel shows each row in a single column, open the file with <span class="path">Data → From Text/CSV</span> instead, or use LibreOffice or Google Sheets.</li>
+    </ul>
+    <p>Running the same command again later, for example with a newer export, keeps the names you filled in and adds any new exercises.</p>
+    <p>Then tick <a href="#use-table">“I filled in an exercise table”</a> in Your setup.</p>
+    <p class="note"><strong>Assisted exercises</strong> such as <em>Pull Up (Assisted)</em> are written as a negative weight, which SparkyFitness reads as assistance. If you point one to an exercise you already have, that exercise needs the Tracking type <strong>Bodyweight (+/− weight)</strong>.</p>
+  </div>
+</li>
+
+<li class="step" id="step-convert">
+  <span class="num" aria-hidden="true">5</span>
+  <div class="stack">
+    <h2>Convert the file</h2>
+    <div class="cmd" data-cmd="convert"><pre>python3 hevy_to_sparkyfitness.py workout_data.csv --weight kg --distance km</pre><button type="button" class="copy">Copy</button></div>
+    <p>This writes <code data-file="output">workout_data_sparkyfitness.csv</code> in the same folder and prints a short summary. Read it: it says which units it used, which exercises it treated as cardio, timed holds, bodyweight or assisted, and anything it couldn't handle. For example:</p>
+<pre class="out">Wrote 2184 sets from 96 workouts (2024-03-02 to 2025-12-05) to <span data-file="output">workout_data_sparkyfitness.csv</span>
+Units: file in lbs/miles, written in kg/km.
+Cardio: Running, Treadmill
+Timed holds: Plank
+Bodyweight: Chin Up, Hanging Leg Raise, Pull Up
+Assisted (assistance written as a negative weight): Pull Up (Assisted)
+Written with a negative weight (assistance): Pull Up (Assisted). If SparkyFitness then
+says 'Some entries failed to import.', the rest was imported and ...</pre>
+    <p>If it stops with an error, see <a href="#trouble">If something goes wrong</a>. Nothing has changed in SparkyFitness yet.</p>
+  </div>
+</li>
+
+<li class="step" id="step-import">
+  <span class="num" aria-hidden="true">6</span>
+  <div class="stack">
+    <h2>Import it into SparkyFitness</h2>
+    <ol>
+      <li>Open SparkyFitness in your browser and go to <span class="path">Settings → Data Import</span>.</li>
+      <li>Next to <span class="path">Workout History (CSV)</span>, press <span class="path">Import</span>.</li>
+      <li>Choose <code data-file="output">workout_data_sparkyfitness.csv</code>, the converted file, not the one from Hevy. Press <span class="path">Process File</span>.</li>
+      <li>Leave the format options on <span class="path">Auto-detect</span>. No “Map CSV Headers” window should appear. If one does, you picked the original Hevy file.</li>
+      <li>Check the preview: dates, sets, reps and weights.</li>
+      <li>Press <span class="path">Confirm and Import</span>. A few years of history can take a minute or two. Keep the page open until it finishes.</li>
+    </ol>
+  </div>
+</li>
+
+<li class="step" id="step-check">
+  <span class="num" aria-hidden="true">7</span>
+  <div class="stack">
+    <h2>Check your history</h2>
+    <p>Open the diary on a few days you remember and compare them with Hevy. The new exercises are in your exercise library. You can edit them to add muscles and equipment, which Hevy's export doesn't include.</p>
+  </div>
+</li>
+
+</ol>
+
+<section class="stack" aria-labelledby="what">
+  <h2 id="what">What comes across</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">In Hevy</th><th scope="col">In SparkyFitness</th></tr></thead>
+      <tbody>
+        <tr><td>Workout date</td><td>Diary date (the day the workout started)</td></tr>
+        <tr><td>Sets, reps, weight, duration, distance</td><td>The same values, in your SparkyFitness units</td></tr>
+        <tr><td>Warm-up, drop and failure sets</td><td>Set types Warm-up, Drop Set and Failure</td></tr>
+        <tr><td>RPE and supersets</td><td>Set notes, for example “RPE 8; Superset 1”</td></tr>
+        <tr><td>Workout title, description, exercise notes</td><td>Notes on each exercise entry</td></tr>
+        <tr><td>Assisted exercises</td><td>A bodyweight exercise with a negative weight (the assistance)</td></tr>
+        <tr><td>Cardio and timed exercises</td><td>Exercises tracked by duration and distance, or by duration</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>Not carried over:</strong></p>
+  <ul>
+    <li>The grouping into workouts. Each exercise is its own diary entry for that day. Two workouts with the same exercise on one day are merged into one entry, with the sets in order.</li>
+    <li>The time of day.</li>
+    <li>Calories. Hevy doesn't export them, so imported entries show 0 kcal.</li>
+    <li>Muscle groups and equipment.</li>
+  </ul>
+</section>
+
+<section class="stack" aria-labelledby="trouble">
+  <h2 id="trouble">If something goes wrong</h2>
+  <div class="faq">
+    <details>
+      <summary>“python is not recognized” or “command not found”</summary>
+      <div class="body">
+        <p>On Windows, use <code>py</code> instead of <code>python</code> (the commands on this page already do), or reinstall Python with <strong>Add python.exe to PATH</strong> ticked. On a Mac, use <code>python3</code>.</p>
+      </div>
+    </details>
+    <details>
+      <summary>“could not read the date …”</summary>
+      <div class="body">
+        <p>Export again from Hevy and don't edit the file. The converter reads Hevy's dates in English, Spanish, Italian, German, French, Portuguese, Dutch, Chinese, Japanese and Korean. For any other language, switch the Hevy app or website to English and export again.</p>
+      </div>
+    </details>
+    <details>
+      <summary>“the dates look like 03/12/2023 …”</summary>
+      <div class="body">
+        <p>The file was saved by Excel, which rewrote the dates. Use the original export from Hevy. If you can't, add <code>--date-order dmy</code> when the day comes first, or <code>--date-order mdy</code> when the month comes first.</p>
+      </div>
+    </details>
+    <details>
+      <summary>The import says “Some entries failed to import.”</summary>
+      <div class="body">
+        <p>Everything else was imported. Usually one of the exercises the converter wrote with a negative weight (the assistance of an assisted exercise) already exists in SparkyFitness as a weighted exercise. The converter lists those exercises at the end of its summary.</p>
+        <p>In SparkyFitness, edit that exercise, set <span class="path">Tracking type</span> to <span class="path">Bodyweight (+/− weight)</span>, and import the same file again. Nothing is duplicated. Or convert again with <code>--assisted-positive</code>; the assistance then shows as the weight.</p>
+      </div>
+    </details>
+    <details>
+      <summary>I want other exercise names after importing</summary>
+      <div class="body">
+        <p>Importing again under new names would duplicate your history. First delete the imported exercises in your exercise library and choose <span class="path">Delete including history</span>. Then make an exercise table (step 4), convert again and import.</p>
+      </div>
+    </details>
+    <details>
+      <summary>I imported the same file twice</summary>
+      <div class="body">
+        <p>That's fine. With the same file and the same exercise names, SparkyFitness updates the entries it imported before instead of adding new ones.</p>
+      </div>
+    </details>
+    <details>
+      <summary>The import showed an error after a long wait</summary>
+      <div class="body">
+        <p>The server may still be finishing. Wait a minute, then check the diary. Importing the same file again is safe if something is missing.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <p>Converter version {{VERSION}}. Tested with real Hevy exports from the app and the website, in kg and lbs, in several languages. <a href="{{TOOL_URL}}/CHANGELOG.md">What's new</a>.</p>
+  <p>Community guide. Not affiliated with Hevy or with the SparkyFitness project. Found a problem? <a href="{{REPO_URL}}/issues/new/choose">Open an issue</a>.</p>
+</footer>
+
+</main>
+
+<script>
+(function () {
+  var STORE_KEY = 'hevy-guide-setup';
+  var defaults = {
+    os: /Windows/i.test(navigator.userAgent) ? 'win' : 'unix',
+    src: 'app', weight: 'kg', distance: 'km', table: false
+  };
+  var state = Object.assign({}, defaults);
+  try {
+    var saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+    if (saved && typeof saved === 'object') Object.assign(state, saved);
+  } catch (e) { /* storage unavailable: use defaults */ }
+
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+  }
+
+  function files() {
+    var input = state.src === 'web' ? 'workouts.csv' : 'workout_data.csv';
+    var base = input.replace(/\.csv$/, '');
+    return { input: input, table: base + '_exercises.csv', output: base + '_sparkyfitness.csv' };
+  }
+
+  function commands() {
+    var py = state.os === 'win' ? 'py' : 'python3';
+    var f = files();
+    var convert = py + ' hevy_to_sparkyfitness.py ' + f.input + ' --weight ' + state.weight + ' --distance ' + state.distance;
+    if (state.table) convert += ' --exercise-map ' + f.table;
+    return { list: py + ' hevy_to_sparkyfitness.py ' + f.input + ' --list-exercises', convert: convert };
+  }
+
+  function render() {
+    var c = commands();
+    var f = files();
+    document.querySelectorAll('[data-cmd]').forEach(function (el) {
+      el.querySelector('pre').textContent = c[el.getAttribute('data-cmd')];
+      el.classList.toggle('win', state.os === 'win');
+    });
+    document.querySelectorAll('[data-file]').forEach(function (el) {
+      el.textContent = f[el.getAttribute('data-file')];
+    });
+    document.querySelectorAll('.os-win').forEach(function (el) { el.hidden = state.os !== 'win'; });
+    document.querySelectorAll('.os-unix').forEach(function (el) { el.hidden = state.os === 'win'; });
+    [['os', state.os], ['src', state.src], ['weight', state.weight], ['distance', state.distance]].forEach(function (pair) {
+      var input = document.querySelector('input[name="' + pair[0] + '"][value="' + pair[1] + '"]');
+      if (input) input.checked = true;
+    });
+    document.getElementById('use-table').checked = !!state.table;
+  }
+
+  document.querySelectorAll('.setup input[type="radio"]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      state[input.name] = input.value; save(); render();
+    });
+  });
+  document.getElementById('use-table').addEventListener('change', function (event) {
+    state.table = event.target.checked; save(); render();
+  });
+
+  function selectText(el) {
+    var range = document.createRange();
+    range.selectNodeContents(el);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  function copyText(text, fallbackEl, button, doneLabel) {
+    var original = button.textContent;
+    function done(label) {
+      button.textContent = label;
+      setTimeout(function () { button.textContent = original; }, 1800);
+    }
+    try {
+      navigator.clipboard.writeText(text).then(function () { done(doneLabel); }, function () {
+        selectText(fallbackEl); done('Press Ctrl+C');
+      });
+    } catch (e) {
+      selectText(fallbackEl); done('Press Ctrl+C');
+    }
+  }
+
+  document.querySelectorAll('.cmd .copy').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var pre = button.parentElement.querySelector('pre');
+      copyText(pre.textContent, pre, button, 'Copied');
+    });
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

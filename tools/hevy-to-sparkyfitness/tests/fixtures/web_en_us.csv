@@ -1,0 +1,12 @@
+"title","start_time","end_time","description","exercise_title","superset_id","exercise_notes","set_index","set_type","weight_kg","reps","distance_km","duration_seconds","rpe"
+"Push Day 💪","Nov 14, 2026, 6:05 PM","Nov 14, 2026, 7:12 PM","Felt strong today","Bench Press (Barbell)",,"Pause the first rep",0,"warmup",40,10,,,
+"Push Day 💪","Nov 14, 2026, 6:05 PM","Nov 14, 2026, 7:12 PM","Felt strong today","Bench Press (Barbell)",,"Pause the first rep",1,"normal",80,5,,,8
+"Push Day 💪","Nov 14, 2026, 6:05 PM","Nov 14, 2026, 7:12 PM","Felt strong today","Bench Press (Barbell)",,"Pause the first rep",2,"failure",82.5,3,,,10
+"Push Day 💪","Nov 14, 2026, 6:05 PM","Nov 14, 2026, 7:12 PM","Felt strong today","Lateral Raise (Dumbbell)",0,"",0,"normal",12,12,,,
+"Push Day 💪","Nov 14, 2026, 6:05 PM","Nov 14, 2026, 7:12 PM","Felt strong today","Lateral Raise (Dumbbell)",0,"",1,"dropset",8,10,,,
+"Push Day 💪","Nov 14, 2026, 6:05 PM","Nov 14, 2026, 7:12 PM","Felt strong today","Triceps Rope Pushdown",0,"",0,"normal",25,12,,,7.5
+"Push Day 💪","Nov 14, 2026, 6:05 PM","Nov 14, 2026, 7:12 PM","Felt strong today","Pull Up (Assisted)",,"",0,"normal",20.41,8,,,
+"Push Day 💪","Nov 14, 2026, 6:05 PM","Nov 14, 2026, 7:12 PM","Felt strong today","Plank",,"",0,"normal",,,,60,
+"Morning workout ☀️","Nov 5, 2026, 7:30 AM","Nov 5, 2026, 8:14 AM","","Pull Up",,"",0,"normal",,8,,,
+"Morning workout ☀️","Nov 5, 2026, 7:30 AM","Nov 5, 2026, 8:14 AM","","Pull Up",,"",1,"normal",,6,,,
+"Morning workout ☀️","Nov 5, 2026, 7:30 AM","Nov 5, 2026, 8:14 AM","","Running",,"",0,"normal",,,5.21,1860,

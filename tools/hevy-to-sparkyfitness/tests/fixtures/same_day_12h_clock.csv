@@ -1,0 +1,6 @@
+"title","start_time","end_time","description","exercise_title","superset_id","exercise_notes","set_index","set_type","weight_kg","reps","distance_km","duration_seconds","rpe"
+"C","Dec 5, 2025, 12:15 PM","","","Squat (Barbell)",,"noon",0,"normal",100,3,,,
+"B","Dec 5, 2025, 9:00 AM","","","Squat (Barbell)",,"morning",0,"normal",90,3,,,
+"A","Dec 5, 2025, 12:30 AM","","","Squat (Barbell)",,"after midnight",0,"normal",80,3,,,
+"A","Dec 5, 2025, 12:30 AM","","","Squat (Barbell)",,"after midnight",1,"normal",81,3,,,
+"Late","Dec 4, 2025, 11:50 PM","Dec 5, 2025, 12:40 AM","","Squat (Barbell)",,"prev day",0,"normal",70,3,,,
