@@ -16,6 +16,8 @@
   --code-line: #ffffff24;
   --warn-bg: #fff4e0;
   --warn-ink: #7a4a00;
+  --error-bg: #fdecec;
+  --error-ink: #8a1c1c;
   --ok: #1f7a4d;
   --font-display: "Segoe UI Variable Display", "Avenir Next", "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
   --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -29,6 +31,7 @@
     --accent: #6c9eff; --accent-soft: #1a2740; --on-accent: #0b1220;
     --code-bg: #0a0f14; --code-ink: #e3eaf2; --code-muted: #8ea0b3; --code-line: #ffffff1f;
     --warn-bg: #2e2312; --warn-ink: #f2c97d; --ok: #5cc994;
+    --error-bg: #3a1717; --error-ink: #ffb4b4;
     color-scheme: dark;
   }
 }
@@ -98,7 +101,7 @@ header.intro { display: flex; flex-direction: column; gap: 14px; }
 .btn { display: inline-block; font: 600 0.95rem var(--font-body); border-radius: 8px; padding: 10px 16px; cursor: pointer; border: 1px solid var(--accent); text-decoration: none; }
 .btn.primary { background: var(--accent); color: var(--on-accent); }
 .btn.secondary { background: transparent; color: var(--accent); }
-.btn:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 2px; }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .status { font-size: 0.9rem; color: var(--muted); }
 .note { background: var(--warn-bg); color: var(--warn-ink); border-radius: var(--radius); padding: 12px 14px; font-size: 0.95rem; }
@@ -143,6 +146,7 @@ legend { font-size: 0.85rem; font-weight: 600; color: var(--muted); padding: 0; 
 .seg label + label span { border-left: 1px solid var(--line); }
 .seg input:checked + span { background: var(--accent); color: var(--on-accent); }
 .seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: -4px; }
+.seg input:checked:focus-visible + span { outline-color: var(--on-accent); }
 .check { display: flex; gap: 10px; align-items: flex-start; font-size: 0.95rem; }
 .check input { margin-top: 0.3em; width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
 
@@ -158,7 +162,8 @@ legend { font-size: 0.85rem; font-weight: 600; color: var(--muted); padding: 0; 
 
 /* Command blocks and program output */
 .cmd { background: var(--code-bg); color: var(--code-ink); border-radius: var(--radius); display: flex; align-items: stretch; min-width: 0; }
-.cmd pre { margin: 0; padding: 12px 14px; overflow-x: auto; flex: 1; min-width: 0; font-family: var(--font-mono); font-size: 0.88rem; line-height: 1.5; }
+.cmd pre { margin: 0; padding: 12px 14px; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; flex: 1; min-width: 0; font-family: var(--font-mono); font-size: 0.88rem; line-height: 1.5; }
+.cmd pre .arg { white-space: nowrap; }
 .cmd pre::before { content: "$ "; color: var(--code-muted); }
 .cmd.win pre::before { content: "> "; }
 .copy { flex: none; background: transparent; color: var(--code-muted); border: 0; border-left: 1px solid var(--code-line); font: 600 0.8rem var(--font-body); padding: 0 14px; cursor: pointer; }
@@ -181,4 +186,46 @@ footer.site-footer { color: var(--muted); font-size: 0.88rem; border-top: 1px so
 
 @media (prefers-reduced-motion: no-preference) {
   .btn, .copy, .seg span { transition: background-color 0.15s, color 0.15s; }
+}
+
+/* Forms, used by in-browser tools */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+.num-inline { display: inline-grid; place-items: center; width: 28px; height: 28px; margin-right: 6px; border-radius: 50%; border: 2px solid var(--accent); color: var(--accent); font-size: 0.85rem; vertical-align: 2px; }
+.privacy { font-size: 0.95rem; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+input[type="text"], input[type="search"], select, textarea {
+  font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 10px; width: 100%; max-width: 100%;
+}
+textarea { font-family: var(--font-mono); font-size: 0.88rem; resize: vertical; }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.field { display: flex; flex-direction: column; gap: 6px; max-width: 520px; }
+.field label { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+.btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+.btn.link { border-color: transparent; background: transparent; color: var(--accent); padding-inline: 6px; }
+.note.error { background: var(--error-bg); color: var(--error-ink); white-space: pre-wrap; }
+
+.dropzone { position: relative; display: flex; flex-direction: column; gap: 4px; align-items: center; text-align: center; padding: 28px 16px; border: 2px dashed var(--line); border-radius: var(--radius); cursor: pointer; background: var(--bg); }
+.dropzone:hover, .dropzone.dragging { border-color: var(--accent); background: var(--accent-soft); }
+.dropzone:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dropzone input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.dropzone-title { font-weight: 600; color: var(--accent); }
+.dropzone-hint { font-size: 0.88rem; color: var(--muted); }
+
+table.names th[scope="row"] { font-weight: 400; width: 42%; }
+table.names .ex-name { display: block; font-weight: 600; overflow-wrap: anywhere; }
+table.names .ex-meta { display: block; font-size: 0.82rem; color: var(--muted); }
+table.names td { min-width: 200px; }
+.hint { font-size: 0.82rem; color: var(--muted); margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
+.hint.ok { color: var(--ok); }
+.hint.warn { color: var(--warn-ink); }
+.chip { font: 600 0.8rem var(--font-body); color: var(--accent); background: var(--accent-soft); border: 1px solid transparent; border-radius: 999px; padding: 2px 10px; cursor: pointer; text-align: left; overflow-wrap: anywhere; }
+.chip:hover { border-color: var(--accent); }
+.chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+details.advanced, details.paste { background: var(--bg); }
+.out.wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 560px) {
+  table.names thead { display: none; }
+  table.names, table.names tbody, table.names tr, table.names th, table.names td { display: block; width: auto; min-width: 0; }
+  table.names td { border-top: 0; padding-top: 0; }
 }

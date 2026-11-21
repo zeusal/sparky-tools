@@ -1,7 +1,7 @@
 """Tests for hevy_to_sparkyfitness.py. Standard library only; Python 3.8+.
 
 Run from the repository root:
-    python -m unittest discover -s tools/hevy-to-sparkyfitness/tests -t tools/hevy-to-sparkyfitness/tests
+    python3 -m unittest discover -s tools/hevy-to-sparkyfitness/tests -t tools/hevy-to-sparkyfitness/tests
 """
 import csv
 import importlib.util
@@ -371,6 +371,146 @@ class ReadTableTests(unittest.TestCase):
         rows, encoding = hevy.read_table(str(FIXTURES / "utf16_tab.csv"), "t")
         self.assertEqual(encoding, "utf-16")
         self.assertEqual(rows[0]["exercise_title"], "Squat (Barbell)")
+
+
+HEADER = ('"title","start_time","end_time","description","exercise_title","superset_id",'
+          '"exercise_notes","set_index","set_type","weight_kg","reps","distance_km",'
+          '"duration_seconds","rpe"\n')
+
+
+class OrderAndTotalsTests(TempDirTestCase):
+    """Same-day workouts: clock order, ties and distance totals."""
+
+    def convert(self, *rows, extra=()):
+        export = self.tmp / "export.csv"
+        export.write_text(HEADER + "".join(r + "\n" for r in rows), encoding="utf-8")
+        code, out, err = run(export, *KG_KM, *extra, "-o", self.tmp / "out.csv")
+        self.assertEqual(code, 0, err)
+        return read_rows(self.tmp / "out.csv"), out
+
+    def test_same_day_order_follows_the_clock_not_the_file(self):
+        rows, _ = self.convert(
+            '"Morning","Dec 5, 2025, 9:00 AM","","","Squat (Barbell)",,"",0,"normal",90,3,,,',
+            '"Noon","Dec 5, 2025, 12:15 PM","","","Squat (Barbell)",,"",0,"normal",100,3,,,')
+        self.assertEqual([(r["set_number"], r["weight"]) for r in rows], [("1", "90"), ("2", "100")])
+
+    def test_same_minute_workouts_keep_oldest_first(self):
+        rows, _ = self.convert(
+            '"Second","2026-11-14 18:05:40","","","Squat (Barbell)",,"",0,"normal",100,3,,,',
+            '"First","2026-11-14 18:05:00","","","Squat (Barbell)",,"",0,"normal",90,3,,,')
+        self.assertEqual([(r["set_number"], r["weight"]) for r in rows], [("1", "90"), ("2", "100")])
+
+    def test_day_distance_is_the_total(self):
+        rows, _ = self.convert(
+            '"Evening","5 Dec 2025, 18:00","","","Running",,"",0,"normal",,,2,600,',
+            '"Morning","5 Dec 2025, 07:00","","","Running",,"",0,"normal",,,3,900,')
+        self.assertEqual([r["distance"] for r in rows], ["5", "5"])
+
+    def test_negative_weight_on_unloaded_exercise_is_bodyweight(self):
+        rows, _ = self.convert(
+            '"W","5 Dec 2025, 11:37","","","Dip",,"",0,"normal",-10,8,,,',
+            '"W","5 Dec 2025, 11:37","","","Dip",,"",1,"normal",5,8,,,')
+        self.assertEqual([(r["exercise_equipment"], r["weight"]) for r in rows],
+                         [("body only", "-10"), ("body only", "5")])
+
+    def write_table(self, rows):
+        table = self.tmp / "table.csv"
+        table.write_text("hevy_name,sparkyfitness_name\n" + "".join(r + "\n" for r in rows),
+                         encoding="utf-8")
+        return table
+
+    def test_mapping_to_an_assisted_name_flips_the_sign(self):
+        table = self.write_table(["Pull Up Machine,Assisted Pull-up"])
+        rows, _ = self.convert(
+            '"W","5 Dec 2025, 11:37","","","Pull Up Machine",,"",0,"normal",30,8,,,',
+            extra=("--exercise-map", table))
+        self.assertEqual(rows[0]["weight"], "-30")
+
+    def test_weighted_bodyweight_kind_survives_renaming(self):
+        table = self.write_table(["Pull Up (Weighted),Lastre dominadas"])
+        rows, _ = self.convert(
+            '"W","5 Dec 2025, 11:37","","","Pull Up (Weighted)",,"",0,"normal",20,5,,,',
+            extra=("--exercise-map", table))
+        self.assertEqual(rows[0]["exercise_equipment"], "body only")
+
+    def test_non_cp1252_names_print_on_a_cp1252_console(self):
+        export = self.tmp / "export.csv"
+        export.write_text(HEADER + '"W","5 Dec 2025, 11:37","","","Plank 🧘",,"",0,"normal",,,,60,\n',
+                          encoding="utf-8")
+        env = dict(os.environ, PYTHONIOENCODING="cp1252")
+        result = subprocess.run(
+            [sys.executable, str(SCRIPT), str(export), *KG_KM, "-o", str(self.tmp / "x.csv")],
+            capture_output=True, env=env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(b"Timed holds: Plank ?", result.stdout)
+
+
+class MoreDateTests(unittest.TestCase):
+    def test_other_languages(self):
+        self.assertEqual(hevy.parse_stamp("14 out 2026, 20:39", None)[0], date(2026, 10, 14))
+        self.assertEqual(hevy.parse_stamp("5 mrt 2026, 20:39", None)[0], date(2026, 3, 5))
+        self.assertEqual(hevy.parse_stamp("5 mei 2026, 20:39", None)[0], date(2026, 5, 5))
+        self.assertEqual(hevy.parse_stamp("5 janv. 2026 à 11:37", None)[0], date(2026, 1, 5))
+        self.assertEqual(hevy.parse_stamp("2025年1月20日 午後1:30", None), (date(2025, 1, 20), 810))
+        self.assertEqual(hevy.parse_stamp("2025年1月20日 上午12:30", None), (date(2025, 1, 20), 30))
+
+    def test_file_date_order_guards(self):
+        with self.assertRaises(SystemExit):
+            hevy.file_date_order([{"start_time": "12/05/2025 11:37"}], None)
+        with self.assertRaises(SystemExit):
+            hevy.file_date_order([{"start_time": "25/12/2025 11:37"},
+                                  {"start_time": "12/25/2025 11:37"}], None)
+
+
+class MoreCommandLineTests(TempDirTestCase):
+    def test_two_month_words_in_a_file_are_refused(self):
+        code, _, err = run(FIXTURES / "two_month_words.csv", *KG_KM, "-o", self.tmp / "x.csv")
+        self.assertNotEqual(code, 0)
+        self.assertIn("could not read the date", err)
+        self.assertFalse((self.tmp / "x.csv").exists())
+
+    def test_list_sets_and_last_done(self):
+        export = self.tmp / "export.csv"
+        export.write_text(HEADER
+                          + '"B","14 Nov 2026, 18:05","","","Squat (Barbell)",,"",0,"normal",100,3,,,\n'
+                          + '"B","14 Nov 2026, 18:05","","","Squat (Barbell)",,"",1,"normal",100,3,,,\n'
+                          + '"A","5 Nov 2026, 07:30","","","Squat (Barbell)",,"",0,"normal",90,3,,,\n',
+                          encoding="utf-8")
+        code, _, err = run(export, "--list-exercises", self.tmp / "t.csv")
+        self.assertEqual(code, 0, err)
+        with open(self.tmp / "t.csv", newline="", encoding="utf-8-sig") as f:
+            row = next(csv.DictReader(f))
+        self.assertEqual((row["sets"], row["last_done"]), ("3", "2026-11-14"))
+
+    def test_encoding_warnings(self):
+        export = self.tmp / "export.csv"
+        export.write_bytes((HEADER + '"W","5 Dec 2025, 11:37","","","Café Squat",,"",0,"normal",90,3,,,\n')
+                           .encode("cp1252"))
+        table = self.tmp / "table.csv"
+        table.write_bytes("hevy_name,sparkyfitness_name\nCafé Squat,Squat\n".encode("cp1252"))
+        code, out, err = run(export, *KG_KM, "--exercise-map", table, "-o", self.tmp / "x.csv")
+        self.assertEqual(code, 0, err)
+        self.assertIn("the file was not saved as UTF-8", out)
+        self.assertIn("the exercise table was not saved as UTF-8", out)
+
+    def test_listing_again_keeps_names_for_exercises_not_in_the_export(self):
+        export = self.copy_fixture("exercise_table_export.csv", "export.csv")
+        self.copy_fixture("exercise_table_filled.csv", "export_exercises.csv")
+        code, out, err = run(export, "--list-exercises")
+        self.assertEqual(code, 0, err)
+        self.assertIn("Also kept 1 filled-in names", out)
+        with open(self.tmp / "export_exercises.csv", newline="", encoding="utf-8-sig") as f:
+            rows = {r["hevy_name"]: r for r in csv.DictReader(f)}
+        self.assertEqual(rows["Typo Name"]["sparkyfitness_name"], "Something")
+        self.assertEqual(rows["Typo Name"]["sets"], "0")
+
+
+class FixtureUseTests(unittest.TestCase):
+    def test_every_fixture_is_used(self):
+        source = Path(__file__).read_text(encoding="utf-8")
+        used = {fixture for _, fixture, _ in CASES}
+        used |= {p.name for p in FIXTURES.iterdir() if p.name in source}
+        self.assertEqual(sorted(p.name for p in FIXTURES.iterdir() if p.name not in used), [])
 
 
 if __name__ == "__main__":

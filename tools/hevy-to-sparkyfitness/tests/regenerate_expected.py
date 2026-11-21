@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Rewrite tests/expected/ from the current converter.
 
-    python tools/hevy-to-sparkyfitness/tests/regenerate_expected.py
+    python3 tools/hevy-to-sparkyfitness/tests/regenerate_expected.py
 
 Only run this after changing the output on purpose, then review every
 difference (git diff) before committing it.

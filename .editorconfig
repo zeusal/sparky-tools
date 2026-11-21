@@ -14,8 +14,8 @@ indent_size = 2
 [*.md]
 trim_trailing_whitespace = false
 
-# Test files reproduce real exports byte for byte (CRLF, UTF-16, BOM).
-[tools/*/tests/fixtures/**]
+# Test files and expected outputs are compared byte for byte (CRLF, UTF-16, BOM).
+[tools/*/tests/{fixtures,expected}/**]
 charset = unset
 end_of_line = unset
 insert_final_newline = unset

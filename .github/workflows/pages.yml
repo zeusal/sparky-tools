@@ -1,16 +1,15 @@
 name: Website
 
-# Publishes site/ and each tool's guide page to GitHub Pages.
+# Publishes site/, each tool's pages and Pyodide (for the in-browser tools) to
+# GitHub Pages, only after CI has passed on main, so a broken tool is never
+# offered for download.
 # Requires Settings > Pages > Build and deployment > Source: "GitHub Actions".
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
-    paths:
-      - "site/**"
-      - "tools/**"
-      - "scripts/build_site.py"
-      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -24,16 +23,25 @@ concurrency:
 
 jobs:
   build:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
         with:
-          python-version: "3.13"
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+      - uses: actions/cache@v5
+        with:
+          path: .cache/pyodide
+          key: pyodide-${{ hashFiles('scripts/pyodide.json') }}
       - name: Build the website
-        run: python scripts/build_site.py --out _site
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+        run: python scripts/build_site.py --out _site --with-pyodide
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
 
@@ -45,4 +53,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

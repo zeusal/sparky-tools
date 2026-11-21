@@ -1,0 +1,15 @@
+{
+  "comment": "Pyodide (Python compiled to WebAssembly, MPL-2.0) runs the tools' Python scripts in the browser. scripts/build_site.py --with-pyodide downloads this exact release, checks its SHA-256 and copies these files to vendor/pyodide/ on the website. To upgrade, change version, url and sha256 together.",
+  "version": "0.27.7",
+  "url": "https://github.com/pyodide/pyodide/releases/download/0.27.7/pyodide-core-0.27.7.tar.bz2",
+  "sha256": "9bc8f127db6c590b191b9aee754022cb41b1a36c7bac233776c11c5ecb541be8",
+  "license_url": "https://github.com/pyodide/pyodide/blob/0.27.7/LICENSE",
+  "files": [
+    "pyodide.js",
+    "pyodide.asm.js",
+    "pyodide.asm.wasm",
+    "python_stdlib.zip",
+    "pyodide-lock.json",
+    "package.json"
+  ]
+}

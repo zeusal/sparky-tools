@@ -61,7 +61,7 @@ import sys
 import unicodedata
 from datetime import date
 
-VERSION = "1.0"
+VERSION = "1.1"
 
 LB_PER_KG = 2.20462262185
 KM_PER_MILE = 1.609344
@@ -381,12 +381,20 @@ def write_exercise_list(parsed, path, input_path, assisted_positive):
                 t = traits[name]
                 writer.writerow([name, filled.get(name, ""), t["sets"], t["last"].isoformat(),
                                  exercise_kind(t, assisted_positive)])
+            # Names filled in for exercises this export doesn't have (for
+            # example from an older export) stay, so no work is lost.
+            others = sorted((n for n in filled if n not in traits and filled[n]), key=str.lower)
+            for name in others:
+                writer.writerow([name, filled[name], 0, "", ""])
     except OSError as error:
         fail(f"could not write {path} ({error.strerror}). Close it in Excel or "
              "choose another name.")
     kept = sum(1 for name in traits if filled.get(name))
     print(f"Wrote {len(traits)} Hevy exercise names to {path}"
           + (f" (kept {kept} names already filled in)" if kept else ""))
+    if others:
+        print(f"Also kept {len(others)} filled-in names for exercises that aren't in this "
+              "export, with 0 sets.")
     shown = f'"{path}"' if " " in path else path
     print("Fill in the sparkyfitness_name column with the exact name of the "
           "SparkyFitness exercise to use (same spelling and capitals), or leave it "

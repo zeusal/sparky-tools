@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Report a security or privacy problem
+    url: https://github.com/zeusal/sparky-tools/security/advisories/new
+    about: Report it privately instead of opening a public issue.
   - name: Problem with SparkyFitness itself
     url: https://github.com/CodeWithCJ/SparkyFitness/issues
     about: Bugs and requests for the SparkyFitness app go to its own repository.

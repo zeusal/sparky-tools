@@ -1,23 +1,35 @@
 #!/usr/bin/env python3
 """Build the Sparky Tools website, or check the tool folders and the website.
 
-    python scripts/build_site.py --out _site    # build into _site/
-    python scripts/build_site.py --check        # validate only (used by CI)
+    python3 scripts/build_site.py --out _site                  # build into _site/
+    python3 scripts/build_site.py --out _site --with-pyodide   # also add Pyodide
+    python3 scripts/build_site.py --check                      # validate only (CI)
 
 The website is site/ (home page and shared styles) plus, for each tool with a
-site/index.html, a page at /<tool-name>/ with the tool's script next to it so
-the page can offer it for download. Placeholders filled in at build time:
+site/ folder, its pages at /<tool-name>/ with the tool's script next to them,
+so a page can offer it for download or run it in the browser. tool.json lists
+the pages the home page links to, in order ("pages": [{"path", "label"}]). Placeholders
+filled in at build time:
 
-    site/index.html             {{TOOLS}}  the list of tools from tool.json
-    tools/<name>/site/*.html    {{VERSION}} {{SCRIPT}} {{TOOL_URL}} {{REPO_URL}}
+    site/index.html             {{TOOLS}} {{REPO_URL}}
+    tools/<name>/site/**.html   {{VERSION}} {{SCRIPT}} {{TOOL_URL}} {{REPO_URL}}
+
+Pages that run a tool in the browser load Pyodide from vendor/pyodide/. With
+--with-pyodide, the release pinned in scripts/pyodide.json is downloaded (and
+cached in .cache/pyodide/), its SHA-256 checked, and the files copied there.
+Without it, the rest of the website builds and links into vendor/pyodide/ are
+not checked.
 """
 import argparse
+import hashlib
 import html
 import json
 import re
 import shutil
 import sys
+import tarfile
 import tempfile
+import urllib.request
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -25,6 +37,8 @@ ROOT = Path(__file__).resolve().parent.parent
 REPO_URL = "https://github.com/zeusal/sparky-tools"
 MANIFEST_KEYS = ("name", "summary", "script", "requires", "status")
 STATUSES = ("stable", "beta", "deprecated")
+PYODIDE_DIR = "vendor/pyodide"
+MARKER = ".sparky-tools-build"
 
 
 class Problems(list):
@@ -56,6 +70,18 @@ def load_tools(problems):
             continue
         if manifest["status"] not in STATUSES:
             problems.add(f"{where}/tool.json", "status must be one of " + ", ".join(STATUSES))
+        pages = manifest.get("pages", [])
+        if not isinstance(pages, list):
+            problems.add(f"{where}/tool.json", "pages must be a list")
+            pages = []
+        for page in list(pages):
+            if not (isinstance(page, dict) and isinstance(page.get("path"), str)
+                    and page.get("label")):
+                problems.add(f"{where}/tool.json", 'each page needs "path" and "label"')
+                pages.remove(page)
+            elif not (folder / "site" / page["path"] / "index.html").is_file():
+                problems.add(f"{where}/tool.json", f"page site/{page['path']} has no index.html")
+                pages.remove(page)
         script = folder / manifest["script"]
         version = None
         if not script.is_file():
@@ -75,15 +101,20 @@ def load_tools(problems):
             "slug": folder.name,
             "folder": folder,
             "manifest": manifest,
+            "pages": pages,
             "version": version,
-            "has_site": (folder / "site" / "index.html").is_file(),
         })
     if not tools:
         problems.add("tools", "no tools found")
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    bug_form = (ROOT / ".github" / "ISSUE_TEMPLATE" / "bug_report.yml").read_text(encoding="utf-8")
     for tool in tools:
         if f"(tools/{tool['slug']}/)" not in readme:
             problems.add("README.md", f"the tools table doesn't link tools/{tool['slug']}/")
+        name = tool["manifest"].get("name", "")
+        if name and not re.search(r"^\s*- " + re.escape(name) + r"\s*$", bug_form, re.M):
+            problems.add(".github/ISSUE_TEMPLATE/bug_report.yml",
+                         f"the Tool list doesn't include {name}")
     return tools
 
 
@@ -93,8 +124,10 @@ def tool_cards(tools):
         m = tool["manifest"]
         source = f"{REPO_URL}/tree/main/tools/{tool['slug']}"
         links = []
-        if tool["has_site"]:
-            links.append(f'<a class="btn primary" href="{tool["slug"]}/">Step-by-step guide</a>')
+        for i, page in enumerate(tool["pages"]):
+            kind = "primary" if i == 0 else "secondary"
+            links.append(f'<a class="btn {kind}" href="{tool["slug"]}/{page["path"]}">'
+                         f'{html.escape(page["label"])}</a>')
         links.append(f'<a class="btn secondary" href="{source}">Documentation and code</a>')
         cards.append(
             '<article class="tool-card">\n'
@@ -114,6 +147,38 @@ def render(text, values):
     return text
 
 
+def add_pyodide(out, cache):
+    """Download the pinned Pyodide release once, check it, copy its files."""
+    config = json.loads((ROOT / "scripts" / "pyodide.json").read_text(encoding="utf-8"))
+    cache.mkdir(parents=True, exist_ok=True)
+    archive = cache / config["url"].rsplit("/", 1)[1]
+    if not archive.is_file():
+        print(f"Downloading Pyodide {config['version']}...", flush=True)
+        partial = archive.with_suffix(".part")
+        with urllib.request.urlopen(config["url"], timeout=120) as response, \
+                open(partial, "wb") as f:
+            shutil.copyfileobj(response, f)
+        partial.replace(archive)
+    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+    if digest != config["sha256"]:
+        archive.unlink()
+        sys.exit(f"Pyodide download has SHA-256 {digest}, expected {config['sha256']}")
+    target = out / PYODIDE_DIR
+    target.mkdir(parents=True)
+    with tarfile.open(archive, "r:bz2") as tar:
+        for name in config["files"]:
+            member = tar.getmember(f"pyodide/{name}")
+            if not member.isfile():
+                sys.exit(f"Pyodide archive: pyodide/{name} is not a file")
+            with tar.extractfile(member) as src, open(target / name, "wb") as dst:
+                shutil.copyfileobj(src, dst)
+    (target / "NOTICE.txt").write_text(
+        f"Pyodide {config['version']} (https://pyodide.org), licensed under the "
+        f"Mozilla Public License 2.0: {config['license_url']}\n"
+        "Unmodified files from the official pyodide-core release.\n",
+        encoding="utf-8")
+
+
 class LinkCollector(HTMLParser):
     def __init__(self):
         super().__init__()
@@ -124,12 +189,13 @@ class LinkCollector(HTMLParser):
         attrs = dict(attrs)
         if attrs.get("id"):
             self.ids.add(attrs["id"])
-        for name in ("href", "src"):
+        for name in ("href", "src", "data-pyodide", "data-script"):
             if attrs.get(name):
                 self.links.append(attrs[name])
 
 
-def check_site(out, problems):
+def check_site(out, problems, with_pyodide):
+    vendored = (out / PYODIDE_DIR).resolve()
     for page in sorted(out.rglob("*.html")):
         where = str(page.relative_to(out))
         text = page.read_text(encoding="utf-8")
@@ -147,16 +213,15 @@ def check_site(out, problems):
                     problems.add(f"site/{where}", f"link to missing #{fragment}")
                 continue
             target = (page.parent / path).resolve()
+            if not with_pyodide and (target == vendored or vendored in target.parents):
+                continue
             if target.is_dir():
                 target = target / "index.html"
             if not target.exists():
                 problems.add(f"site/{where}", f"broken link {link}")
 
 
-MARKER = ".sparky-tools-build"
-
-
-def build(out, problems):
+def build(out, problems, with_pyodide, cache):
     tools = load_tools(problems)
     if out.exists():
         # Only ever delete a folder this script built, never the repository or
@@ -171,7 +236,7 @@ def build(out, problems):
                            {"TOOLS": tool_cards(tools), "REPO_URL": REPO_URL}),
                     encoding="utf-8")
     for tool in tools:
-        if not tool["has_site"]:
+        if not (tool["folder"] / "site").is_dir():
             continue
         target = out / tool["slug"]
         shutil.copytree(tool["folder"] / "site", target)
@@ -185,7 +250,9 @@ def build(out, problems):
         }
         for page in target.rglob("*.html"):
             page.write_text(render(page.read_text(encoding="utf-8"), values), encoding="utf-8")
-    check_site(out, problems)
+    if with_pyodide:
+        add_pyodide(out, cache)
+    check_site(out, problems, with_pyodide)
 
 
 def main():
@@ -193,13 +260,17 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--out", type=Path, help="folder to build the website into")
     group.add_argument("--check", action="store_true", help="validate without keeping the build")
+    parser.add_argument("--with-pyodide", action="store_true",
+                        help="add Pyodide so in-browser tools work (downloads it once)")
+    parser.add_argument("--pyodide-cache", type=Path, default=ROOT / ".cache" / "pyodide",
+                        help="where to keep the downloaded Pyodide release")
     args = parser.parse_args()
     problems = Problems()
     if args.check:
         with tempfile.TemporaryDirectory() as tmp:
-            build(Path(tmp) / "_site", problems)
+            build(Path(tmp) / "_site", problems, args.with_pyodide, args.pyodide_cache)
     else:
-        build(args.out.resolve(), problems)
+        build(args.out.resolve(), problems, args.with_pyodide, args.pyodide_cache)
     if problems:
         sys.exit("Problems found:\n  " + "\n  ".join(problems))
     print("Website built." if args.out else "Tool folders and website are OK.")

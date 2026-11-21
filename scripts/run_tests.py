@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run every tool's tests.
 
-    python scripts/run_tests.py
+    python3 scripts/run_tests.py
 
 Each tool's tests run in their own Python process, so tools can't affect each
 other. Exits with a non-zero status when any test fails or a tool has none.

@@ -4,10 +4,13 @@ Moves your workout history from [Hevy](https://www.hevyapp.com/) to [SparkyFitne
 
 Hevy lets every account, free or Pro, export its workouts as a CSV file. SparkyFitness can import workout history from CSV, but not Hevy's file as it comes: the dates carry a time of day, the columns have other names, set numbers start at 0, and durations are in seconds. This script rewrites the file into the columns of SparkyFitness's Workout History importer, on your own computer.
 
-**Prefer a guided walkthrough?** Follow the [step-by-step guide](https://zeusal.github.io/sparky-tools/hevy-to-sparkyfitness/). It builds the commands for your system and units.
+**Not technical? Use the [easy version](https://zeusal.github.io/sparky-tools/hevy-to-sparkyfitness/).** It does everything in your browser, on a computer or a phone, with nothing to install, and walks you through the whole migration, from exporting in Hevy to importing in SparkyFitness.
+
+**Prefer the command line?** Read on, or follow the [command-line guide](https://zeusal.github.io/sparky-tools/hevy-to-sparkyfitness/command-line/), which builds the commands for your system and units.
 
 ## Contents
 
+- [The easy version, in your browser](#the-easy-version-in-your-browser)
 - [Requirements](#requirements)
 - [Quick start](#quick-start)
 - [Options](#options)
@@ -18,9 +21,25 @@ Hevy lets every account, free or Pro, export its workouts as a CSV file. SparkyF
 - [Privacy](#privacy)
 - [Development](#development)
 
+## The easy version, in your browser
+
+The [easy version](https://zeusal.github.io/sparky-tools/hevy-to-sparkyfitness/) does everything this README describes without installing anything:
+
+1. Open your Hevy export on the page.
+2. Pick the weight and distance units set in SparkyFitness.
+3. Optionally, choose SparkyFitness names for your exercises in a table. Paste the names of your SparkyFitness exercises once to get suggestions and a spelling check; the page also suggests names from [Free Exercise DB](https://github.com/yuhonas/free-exercise-db), whose exercises SparkyFitness can add with their names unchanged.
+4. Press **Convert**, download the file and import it into SparkyFitness (see [Quick start](#quick-start), step 4).
+
+The page runs this exact script with [Pyodide](https://pyodide.org) (Python compiled to WebAssembly), so it writes the same file as the command line, byte for byte. Your export is read inside the browser and never uploaded. The first visit downloads the converter's engine (about 14 MB uncompressed), which your browser then keeps.
+
+Its exercise table can be downloaded and loaded again, and it has the same format as `--list-exercises`, so you can switch between the page and the command line. The page remembers your units, your pasted names and your chosen names in this browser only.
+
 ## Requirements
 
 - Python 3.8 or newer. Nothing else to install.
+  - **Windows:** install Python from [python.org/downloads](https://www.python.org/downloads/). The main button installs the Python install manager; then open a new Command Prompt and run `py --version` (if it offers to install Python, accept). With the standalone installer instead, tick *Add python.exe to PATH*.
+  - **macOS:** run `python3 --version` in Terminal; if it's missing, install Python from python.org.
+  - **Linux:** use your package manager, for example `sudo apt install python3`.
 - A Hevy workout export:
   - **App:** Profile → Settings → Export & Import Data → Export Data → Export Workouts. You get `workout_data.csv`.
   - **Website:** sign in and open [hevy.com/settings?export](https://hevy.com/settings?export), then press *Export Workout Data*. You get `workouts.csv`.
@@ -30,7 +49,7 @@ Hevy lets every account, free or Pro, export its workouts as a CSV file. SparkyF
 ## Quick start
 
 1. Check your units in SparkyFitness: *Settings → Preferences → Weight Unit* and *Distance Unit*.
-2. Download [`hevy_to_sparkyfitness.py`](hevy_to_sparkyfitness.py) and put it in the same folder as your export.
+2. Download the script with the **Download** button of the [command-line guide](https://zeusal.github.io/sparky-tools/hevy-to-sparkyfitness/command-line/#step-get), or open [`hevy_to_sparkyfitness.py`](hevy_to_sparkyfitness.py) and press *Download raw file*. Put it in the same folder as your export.
 3. Open a terminal in that folder and run it with your SparkyFitness units:
 
    ```bash
@@ -40,7 +59,7 @@ Hevy lets every account, free or Pro, export its workouts as a CSV file. SparkyF
    python3 hevy_to_sparkyfitness.py workout_data.csv --weight kg --distance km
    ```
 
-   It writes `workout_data_sparkyfitness.csv` next to your export and prints a summary.
+   It writes `workout_data_sparkyfitness.csv` next to your export and prints a summary. If you exported from the website, use `workouts.csv` instead; the result is then `workouts_sparkyfitness.csv`.
 4. In SparkyFitness, open *Settings → Data Import*, press *Import* next to *Workout History (CSV)*, choose the converted file and press *Process File*. Leave the format options on *Auto-detect*, check the preview and press *Confirm and Import*.
 
 Example summary:
@@ -52,6 +71,8 @@ Cardio: Running, Treadmill
 Timed holds: Plank
 Bodyweight: Chin Up, Hanging Leg Raise, Pull Up
 Assisted (assistance written as a negative weight): Pull Up (Assisted)
+Written with a negative weight (assistance): Pull Up (Assisted). If SparkyFitness then says
+'Some entries failed to import.', the rest was imported and ...
 ```
 
 ## Options
@@ -73,6 +94,8 @@ SparkyFitness reuses one of your exercises only when its name matches exactly, c
 
 - **New to SparkyFitness?** Keep the Hevy names and keep logging under them after the import.
 - **Already logging under other names?** Use an exercise table, so your old and new history end up under the same exercise:
+
+The commands below are for macOS and Linux with an app export. On Windows, write `py` instead of `python3`; with a website export, use `workouts.csv` and `workouts_exercises.csv`.
 
 1. Write the table:
 
@@ -96,7 +119,7 @@ SparkyFitness reuses one of your exercises only when its name matches exactly, c
    python3 hevy_to_sparkyfitness.py workout_data.csv --weight kg --distance km --exercise-map workout_data_exercises.csv
    ```
 
-Running `--list-exercises` again later, for example with a newer export, keeps the names you filled in and adds any new exercises. The script stops if the table lists the same Hevy name twice with different targets, and warns about names that aren't in the export and about targets that the table renames again.
+Running `--list-exercises` again later, for example with a newer export, keeps every name you filled in (names for exercises that aren't in the new export stay, with 0 sets) and adds any new exercises. The script stops if the table lists the same Hevy name twice with different targets, and warns about names that aren't in the export and about targets that the table renames again.
 
 If you already imported under the Hevy names and want other names, importing again would duplicate your history. First delete the imported exercises in SparkyFitness with *Delete including history*, then convert with a table and import.
 
@@ -134,7 +157,7 @@ Hevy writes the assistance of an assisted exercise as a positive number. SparkyF
 ## Troubleshooting
 
 **`python` is not recognized, or `command not found`**
-On Windows, use `py`, or reinstall Python with *Add python.exe to PATH* ticked. On macOS, use `python3`.
+On Windows, use `py`. If it still isn't recognized, close and reopen the Command Prompt, or install Python again (see [Requirements](#requirements)). On macOS and Linux, use `python3`. Or skip Python and use the [easy version](#the-easy-version-in-your-browser).
 
 **`could not read the date …`**
 Export again from Hevy and don't edit the file. The script reads Hevy's dates in English, Spanish, Italian, German, French, Portuguese, Dutch, Chinese, Japanese and Korean. For other languages, switch Hevy to English and export again.
@@ -163,13 +186,17 @@ The script reads your export and writes new files next to it. It makes no networ
 The tests use only the standard library. From the repository root:
 
 ```bash
-python scripts/run_tests.py
+python3 scripts/run_tests.py
 ```
 
 Or only this tool's tests:
 
 ```bash
-python -m unittest discover -s tools/hevy-to-sparkyfitness/tests -t tools/hevy-to-sparkyfitness/tests
+python3 -m unittest discover -s tools/hevy-to-sparkyfitness/tests -t tools/hevy-to-sparkyfitness/tests
 ```
 
-`tests/fixtures/` holds synthetic Hevy exports (app and website formats, several languages, Excel re-saves) and `tests/expected/` the converted files they must produce. When you change the output on purpose, regenerate the expected files with `python tools/hevy-to-sparkyfitness/tests/regenerate_expected.py` and review the difference before committing it.
+`tests/fixtures/` holds synthetic Hevy exports (app and website formats, several languages, Excel re-saves) and `tests/expected/` the converted files they must produce. When you change the output on purpose, regenerate the expected files with `python3 tools/hevy-to-sparkyfitness/tests/regenerate_expected.py` and review the difference before committing it.
+
+`tests/web/` holds the website's tests (the easy version and the command-line guide). They use the page in Chromium and check that its downloads match the same expected files. See [In-browser tools](../../CONTRIBUTING.md#in-browser-tools) for how to run them.
+
+The suggestions list `site/free-exercise-db-names.json` comes from Free Exercise DB (public domain, Unlicense). Refresh it with `python3 tools/hevy-to-sparkyfitness/dev/update_free_exercise_db_names.py`.

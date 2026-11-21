@@ -4,24 +4,27 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   tests:
-    name: Tests (Python ${{ matrix.python }})
-    runs-on: ubuntu-latest
+    name: Tests (Python ${{ matrix.python }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        # Oldest supported Python and the newest stable one.
-        python: ["3.8", "3.13"]
+        # The oldest supported Python and a current release.
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.8", "3.15"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python }}
+          enable-cache: false
       - name: Run every tool's tests
         run: uv run --no-project python scripts/run_tests.py
 
@@ -29,9 +32,33 @@ jobs:
     name: Tool folders and website
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
+          python-version: "3.x"
       - name: Check tool folders, manifests and website
         run: python scripts/build_site.py --check
+
+  web:
+    name: Browser tools
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - uses: actions/cache@v5
+        with:
+          path: .cache/pyodide
+          key: pyodide-${{ hashFiles('scripts/pyodide.json') }}
+      - name: Build the website with Pyodide
+        run: python scripts/build_site.py --out _site --with-pyodide
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: Run the browser tests
+        run: node scripts/run_web_tests.mjs _site

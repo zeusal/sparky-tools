@@ -1,6 +1,6 @@
 name: Tool idea
 description: Suggest a new tool or a bigger change to an existing one.
-labels: [tool idea]
+labels: [enhancement]
 body:
   - type: textarea
     id: problem
