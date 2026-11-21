@@ -46,19 +46,27 @@
     '            err.write("Error: this file could not be read (%s: %s)\\n" % (type(error).__name__, error))',
     '            code = 1',
     '    return json.dumps({"code": code, "out": out.getvalue(), "err": err.getvalue()})',
+    '_tool = None',
+    'def tool_module():',
+    '    global _tool',
+    '    if _tool is None:',
+    '        spec = importlib.util.spec_from_file_location("hevy_tool", TOOL)',
+    '        module = importlib.util.module_from_spec(spec)',
+    '        spec.loader.exec_module(module)',
+    '        _tool = module',
+    '    return _tool',
     'def read_table_json(path):',
-    '    spec = importlib.util.spec_from_file_location("hevy_tool", TOOL)',
-    '    module = importlib.util.module_from_spec(spec)',
-    '    spec.loader.exec_module(module)',
     '    try:',
     '        with contextlib.redirect_stderr(io.StringIO()):',
-    '            mapping, _ = module.read_exercise_map(path, require_filled=False)',
+    '            mapping, _ = tool_module().read_exercise_map(path, require_filled=False)',
     '        return json.dumps({"ok": True, "mapping": mapping})',
     '    except SystemExit as stop:',
     '        return json.dumps({"ok": False, "error": str(stop.code)})',
     'def list_json(path):',
     '    with open(path, newline="", encoding="utf-8-sig") as f:',
-    '        return json.dumps(list(csv.DictReader(f)))'
+    '        return json.dumps(list(csv.DictReader(f)))',
+    'def similar_json(names_json):',
+    '    return json.dumps(tool_module().similar_names(json.loads(names_json)))'
   ].join('\n');
 
   function $(id) { return document.getElementById(id); }
@@ -97,6 +105,8 @@
   var state = {
     file: null,          // { name, base, path }
     rows: [],            // { hevy, sets, last, kind, target, tr, input, hint }
+    lookAlike: new Map(), // Hevy name -> rows that look like one exercise, most sets first
+    byName: new Map(),   // name written to SparkyFitness -> rows written with it
     userNames: [],
     userSet: new Set(),
     userLower: new Map(),
@@ -161,7 +171,10 @@
           py: py,
           run: function (args) { return JSON.parse(py.globals.get('run_tool')(args)); },
           readTable: function (path) { return JSON.parse(py.globals.get('read_table_json')(path)); },
-          list: function (path) { return JSON.parse(py.globals.get('list_json')(path)); }
+          list: function (path) { return JSON.parse(py.globals.get('list_json')(path)); },
+          similar: function (names) {
+            return JSON.parse(py.globals.get('similar_json')(JSON.stringify(names)));
+          }
         };
       });
     });
@@ -278,7 +291,8 @@
       ? state.userNames.length + ' names in your list.' : '';
     els.applySuggestions.disabled = state.userNames.length === 0;
     rebuildCandidates();
-    state.rows.forEach(function (row) { row.suggestion = bestSuggestion(row.hevy); updateHint(row); });
+    state.rows.forEach(function (row) { row.suggestion = bestSuggestion(row.hevy); });
+    refreshHints();
   }
 
   function button(label, onClick) {
@@ -292,20 +306,96 @@
 
   function setTarget(row, value) {
     els.result.hidden = true; // a file made before this change is out of date
+    var before = written(row);
     row.target = value.trim();
     row.input.value = row.target;
     if (row.target) saved.targets[row.hevy] = row.target; else delete saved.targets[row.hevy];
     persist();
-    updateHint(row);
+    refreshAround(row, before);
     updateSummary();
+  }
+
+  // The name an exercise is written with: the chosen name, else its Hevy name.
+  // Rows written with the same name become one exercise in SparkyFitness.
+  function written(row) { return row.target || row.hevy; }
+
+  function indexNames() {
+    state.byName = new Map();
+    state.rows.forEach(function (row) {
+      var name = written(row);
+      if (!state.byName.has(name)) state.byName.set(name, []);
+      state.byName.get(name).push(row);
+    });
+  }
+
+  function refreshHints() {
+    indexNames();
+    state.rows.forEach(updateHint);
+  }
+
+  // After one row's name changed from `before`: only the rows whose hints
+  // can change (same old or new name, or names that look alike).
+  function refreshAround(row, before) {
+    indexNames();
+    var now = written(row);
+    var alike = state.lookAlike.get(row.hevy) || [];
+    state.rows.forEach(function (r) {
+      var name = written(r);
+      if (r === row || name === before || name === now || alike.indexOf(r) !== -1) updateHint(r);
+    });
+  }
+
+  function quoted(rows) {
+    return rows.map(function (r) { return '“' + r.hevy + '”'; }).join(', ');
   }
 
   function updateHint(row) {
     var hint = row.hint;
     hint.textContent = '';
     hint.className = 'hint';
+    function text(t, into) {
+      var s = document.createElement('span');
+      s.textContent = t;
+      (into || hint).appendChild(s);
+    }
+    nameHint(row, hint, text);
+    joinHint(row, hint, text);
+  }
+
+  // Which Hevy exercises become one, and which look like one but don't yet.
+  function joinHint(row, hint, text) {
+    var box = document.createElement('div');
+    box.className = 'join';
+    var name = written(row);
+    var together = (state.byName.get(name) || []).filter(function (r) { return r !== row; });
+    if (together.length) {
+      text('Joined with ' + quoted(together) + ' from Hevy: one exercise in SparkyFitness.', box);
+    }
+    var alike = state.lookAlike.get(row.hevy) || [];
+    var lead = alike[0];
+    if (lead && lead !== row && written(lead) !== name) {
+      text('Looks like the same exercise as “' + lead.hevy + '”' +
+        (lead.target ? ' (written as “' + lead.target + '”). ' : '. '), box);
+      box.appendChild(button('Join with “' + lead.hevy + '”', function () {
+        setTarget(row, written(lead));
+        row.input.focus();
+      }));
+    } else if (lead === row) {
+      var apart = alike.filter(function (r) { return written(r) !== name; });
+      if (apart.length) {
+        text('Looks like the same exercise as ' + quoted(apart) + '. ', box);
+        box.appendChild(button(apart.length === 1 ? 'Join “' + apart[0].hevy + '” with this one'
+          : 'Join them with this one', function () {
+          apart.forEach(function (r) { setTarget(r, name); });
+          row.input.focus();
+        }));
+      }
+    }
+    if (box.childNodes.length) hint.appendChild(box);
+  }
+
+  function nameHint(row, hint, text) {
     var value = row.target;
-    function text(t) { var s = document.createElement('span'); s.textContent = t; hint.appendChild(s); }
 
     if (!value) {
       if (state.userSet.has(row.hevy)) {
@@ -331,6 +421,8 @@
       hint.classList.add('warn');
       text('Capitals differ from your exercise “' + exact + '”. ');
       hint.appendChild(button('Use “' + exact + '”', function () { setTarget(row, exact); row.input.focus(); }));
+    } else if ((state.byName.get(value) || []).some(function (r) { return !r.target; })) {
+      text('Imported as “' + value + '”.');
     } else if (state.userNames.length) {
       hint.classList.add('warn');
       text('Not in your list of SparkyFitness names. Check the spelling, or it becomes a new exercise.');
@@ -346,10 +438,16 @@
 
   function updateSummary() {
     var renamed = state.rows.filter(function (r) { return r.target; }).length;
-    els.namesSummary.textContent = state.rows.length + ' exercises · ' + renamed + ' with a SparkyFitness name';
+    var counts = new Map();
+    state.rows.forEach(function (r) { counts.set(written(r), (counts.get(written(r)) || 0) + 1); });
+    var joinedRows = 0;
+    var joinedInto = 0;
+    counts.forEach(function (n) { if (n > 1) { joinedRows += n; joinedInto++; } });
+    els.namesSummary.textContent = state.rows.length + ' exercises · ' + renamed + ' with a SparkyFitness name' +
+      (joinedRows ? ' · ' + joinedRows + ' joined into ' + joinedInto : '');
   }
 
-  function renderRows(listRows) {
+  function renderRows(listRows, groups) {
     state.rows = listRows.map(function (r) {
       return {
         hevy: r.hevy_name,
@@ -359,6 +457,16 @@
         target: (saved.targets[r.hevy_name] || '').trim()
       };
     }).sort(function (a, b) { return b.sets - a.sets || a.hevy.localeCompare(b.hevy); });
+
+    // Names the converter finds alike, in table order (most sets first).
+    var position = new Map(state.rows.map(function (r, i) { return [r.hevy, i]; }));
+    state.lookAlike = new Map();
+    (groups || []).forEach(function (names) {
+      var members = names.filter(function (n) { return position.has(n); })
+        .sort(function (a, b) { return position.get(a) - position.get(b); })
+        .map(function (n) { return state.rows[position.get(n)]; });
+      if (members.length > 1) members.forEach(function (r) { state.lookAlike.set(r.hevy, members); });
+    });
 
     var fragment = document.createDocumentFragment();
     state.rows.forEach(function (row, index) {
@@ -387,8 +495,10 @@
       input.addEventListener('change', function () { setTarget(row, input.value); });
       input.addEventListener('input', function () {
         els.result.hidden = true;
+        var before = written(row);
         row.target = input.value.trim();
-        updateHint(row);
+        refreshAround(row, before);
+        updateSummary();
       });
       var hint = document.createElement('div');
       hint.className = 'hint';
@@ -406,7 +516,7 @@
     });
     els.namesBody.textContent = '';
     els.namesBody.appendChild(fragment);
-    state.rows.forEach(updateHint);
+    refreshHints();
     els.namesEmpty.hidden = true;
     els.namesTools.hidden = false;
     applyFilter();
@@ -486,6 +596,8 @@
     [/with --assisted-positive, /g, 'with the assistance option ticked, '],
     [/, or leave out --assisted-positive\./g, ', or untick the assistance option under Advanced options in step 2.'],
     [/; choose another name with -o/g, ''],
+    [/give each group the same sparkyfitness_name in the exercise table and convert again\./g,
+      'give each group the same SparkyFitness name in step 3 (the table can join them for you) and create the file again.'],
     [/^Error: /gm, '']
   ];
 
@@ -539,10 +651,11 @@
         return;
       }
       var rows = engine.list(tablePath);
+      var groups = engine.similar(rows.map(function (r) { return r.hevy_name; }));
       var total = rows.reduce(function (n, r) { return n + (parseInt(r.sets, 10) || 0); }, 0);
       els.fileStatus.textContent = '✓ ' + state.file.name + ': ' + total + ' sets of ' + rows.length +
         ' exercises. Continue with step 2.';
-      renderRows(rows);
+      renderRows(rows, groups);
       els.convert.disabled = false;
     });
   }
@@ -653,7 +766,7 @@
   });
   els.assistedPositive.addEventListener('change', function () {
     els.result.hidden = true;
-    state.rows.forEach(updateHint);
+    refreshHints();
   });
 
   els.userNames.value = saved.userNames;
@@ -746,8 +859,8 @@
     state.rows.forEach(function (row) {
       row.target = '';
       row.input.value = '';
-      updateHint(row);
     });
+    refreshHints();
     updateSummary();
     $('forget-status').textContent = 'Done: this page no longer remembers anything.';
   });

@@ -98,6 +98,46 @@ export default async function ({ browser, baseUrl, toolDir }) {
     },
   });
 
+  // Look-alike exercises: joined with one click, from either row, the page
+  // gives the same file as the command line with a table that joins them.
+  await check('similar_names.csv', 'similar_names_joined__kg_km.csv', {
+    after: async (page) => {
+      const hintOf = async (hevy) => page.locator(`#${await page.getByLabel(`SparkyFitness name for ${hevy}`,
+        { exact: true }).getAttribute('aria-describedby')}`);
+      const pullUp = await hintOf('Pull-up');
+      assert.match(await pullUp.textContent(), /Looks like the same exercise as “Pull Up”/);
+      await pullUp.getByRole('button', { name: 'Join with “Pull Up”' }).click();
+      assert.equal(await page.getByLabel('SparkyFitness name for Pull-up', { exact: true }).inputValue(), 'Pull Up');
+      assert.match(await (await hintOf('Pull Up')).textContent(), /Joined with “Pull-up” from Hevy/);
+      assert.equal(await page.getByLabel('SparkyFitness name for Pull-up', { exact: true })
+        .evaluate((el) => el === document.activeElement), true, 'focus stays in the row');
+
+      const bench = await hintOf('Bench Press (Barbell)');
+      await bench.getByRole('button', { name: 'Join “Barbell Bench Press” with this one' }).click();
+      assert.equal(await page.getByLabel('SparkyFitness name for Barbell Bench Press', { exact: true }).inputValue(),
+        'Bench Press (Barbell)');
+      assert.doesNotMatch(await page.textContent('#names-tools'), /Looks like the same exercise/);
+      assert.match(await page.textContent('#names-summary'), /4 joined into 2/);
+      assert.equal(await (await hintOf('Pull Up (Assisted)')).locator('.join').count(), 0,
+        'an assisted variant is not the same exercise');
+    },
+  });
+
+  // Before joining, the summary says how to join them on this page.
+  {
+    const { page, context } = await freshPage();
+    try {
+      await open(page, 'similar_names.csv');
+      await page.click('#convert');
+      await page.waitForSelector('#result:not([hidden])');
+      const summary = await page.textContent('#summary');
+      assert.match(summary, /look like the same exercise but stay separate exercises: Barbell Bench Press = Bench Press \(Barbell\); Pull Up = Pull-up\. To join them, give each group the same SparkyFitness name in step 3/);
+      assert.doesNotMatch(summary, /sparkyfitness_name|exercise table|--/);
+    } finally {
+      await context.close();
+    }
+  }
+
   // Ambiguous Excel dates: the page asks for the date order, then works.
   {
     const { page, context } = await freshPage();

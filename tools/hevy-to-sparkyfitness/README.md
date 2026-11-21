@@ -27,7 +27,7 @@ The [easy version](https://zeusal.github.io/sparky-tools/hevy-to-sparkyfitness/)
 
 1. Open your Hevy export on the page.
 2. Pick the weight and distance units set in SparkyFitness.
-3. Optionally, choose SparkyFitness names for your exercises in a table. Type the names of your SparkyFitness exercises once (SparkyFitness doesn't let you select text in its exercise list, but you can copy a name from an exercise's edit window) to get suggestions and a spelling check; the page also suggests names from [Free Exercise DB](https://github.com/yuhonas/free-exercise-db), whose exercises SparkyFitness can add with their names unchanged.
+3. Optionally, choose SparkyFitness names for your exercises in a table. Type the names of your SparkyFitness exercises once (SparkyFitness doesn't let you select text in its exercise list, but you can copy a name from an exercise's edit window) to get suggestions and a spelling check; the page also suggests names from [Free Exercise DB](https://github.com/yuhonas/free-exercise-db), whose exercises SparkyFitness can add with their names unchanged. Give two Hevy exercises the same name to make them one; the table points out names that look alike, such as *Pull Up* and *Pull-up*, and joins them with one click.
 4. Press **Convert**, download the file and import it into SparkyFitness (see [Quick start](#quick-start), step 4).
 
 The page runs this exact script with [Pyodide](https://pyodide.org) (Python compiled to WebAssembly), so it writes the same file as the command line, byte for byte. Your export is read inside the browser and never uploaded. The first visit downloads the converter's engine (about 14 MB uncompressed), which your browser then keeps.
@@ -112,7 +112,7 @@ The commands below are for macOS and Linux with an app export. On Windows, write
    | `sets`, `last_done` | How often and how recently you did it, to help you decide. |
    | `kind` | How the script will set the exercise up: `weights`, `bodyweight`, `assisted`, `cardio` or `timed`. |
 
-2. Fill in `sparkyfitness_name` in Excel, LibreOffice, Numbers or a text editor. Use the names exactly as SparkyFitness shows them, capitals included. Its exercise list doesn't let you select text, so type them, or open an exercise (double-click it, or tap it on a phone) and copy the name from its edit window. Several Hevy names can point to the same exercise. Save as **CSV UTF-8**. If Excel shows each row in a single column, open the file with *Data → From Text/CSV*, or use LibreOffice or Google Sheets.
+2. Fill in `sparkyfitness_name` in Excel, LibreOffice, Numbers or a text editor. Use the names exactly as SparkyFitness shows them, capitals included. Its exercise list doesn't let you select text, so type them, or open an exercise (double-click it, or tap it on a phone) and copy the name from its edit window. Several Hevy names can point to the same exercise: their sets become one exercise in SparkyFitness. `--list-exercises` and the conversion name the Hevy exercises that look like the same one (other capitals, hyphens or spaces, a plural, or the words in another order, such as *Pull Up* and *Pull-up*), so you can join them before importing. Save as **CSV UTF-8**. If Excel shows each row in a single column, open the file with *Data → From Text/CSV*, or use LibreOffice or Google Sheets.
 3. Convert with the table:
 
    ```bash
@@ -122,6 +122,8 @@ The commands below are for macOS and Linux with an app export. On Windows, write
 Running `--list-exercises` again later, for example with a newer export, keeps every name you filled in (names for exercises that aren't in the new export stay, with 0 sets) and adds any new exercises. The script stops if the table lists the same Hevy name twice with different targets, and warns about names that aren't in the export and about targets that the table renames again.
 
 If you already imported under the Hevy names and want other names, importing again would duplicate your history. First delete the imported exercises in SparkyFitness with *Delete including history*, then convert with a table and import.
+
+SparkyFitness can't merge two exercises yet, so join duplicates in the table before importing. If you already have the same exercise twice and one of them came from an import, delete that one with *Delete including history* (this also deletes any sets logged on it by hand), give its Hevy name the other one's name in the table, then convert and import again. Entries imported before are updated, not added twice.
 
 ## What comes across
 

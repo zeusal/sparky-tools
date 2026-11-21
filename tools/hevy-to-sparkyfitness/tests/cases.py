@@ -30,4 +30,6 @@ CASES = [
      KG_KM + ["--exercise-map", "{fixtures}/exercise_table_filled.csv"]),
     ("exercise_table_excel__kg_km", "exercise_table_export.csv",
      KG_KM + ["--exercise-map", "{fixtures}/exercise_table_excel_semicolon.csv"]),
+    ("similar_names_joined__kg_km", "similar_names.csv",
+     KG_KM + ["--exercise-map", "{fixtures}/similar_names_table.csv"]),
 ]

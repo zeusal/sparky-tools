@@ -62,7 +62,7 @@ import sys
 import unicodedata
 from datetime import date
 
-VERSION = "1.1"
+VERSION = "1.2"
 
 LB_PER_KG = 2.20462262185
 KM_PER_MILE = 1.609344
@@ -157,6 +157,59 @@ def has_word(name, words):
 
 def is_assisted(name):
     return ASSISTED_RE.search(plain(name)) is not None
+
+
+def name_words(name):
+    """The words of an exercise name, for comparing names: lower case, no
+    accents, plurals made singular ('Pull-Ups' -> ['pull', 'up'])."""
+    words = []
+    for w in re.findall(r"[^\W_]+", plain(name)):
+        if len(w) > 4 and re.search(r"(ch|sh|x|ss)es$", w):
+            w = w[:-2]
+        elif len(w) > 2 and w.endswith("s") and not w.endswith("ss"):
+            w = w[:-1]
+        words.append(w)
+    return words
+
+
+def similar_names(names):
+    """Groups of names that are probably one exercise written differently:
+    other capitals, accents, hyphens or spaces, a plural, or the same words in
+    another order ('Pull Up', 'Pull-ups', 'Pullup'; 'Bench Press (Barbell)',
+    'Barbell Bench Press'). Each group is sorted; groups by their first name."""
+    parent = {}
+
+    def root(name):
+        while parent[name] != name:
+            parent[name] = parent[parent[name]]
+            name = parent[name]
+        return name
+
+    first_with = {}
+    for name in names:
+        parent.setdefault(name, name)
+        words = name_words(name)
+        if not words:
+            continue
+        for key in (("same words",) + tuple(sorted(words)), ("written together", "".join(words))):
+            if key in first_with:
+                parent[root(name)] = root(first_with[key])
+            else:
+                first_with[key] = name
+    groups = {}
+    for name in parent:
+        groups.setdefault(root(name), []).append(name)
+    return sorted((sorted(g, key=str.lower) for g in groups.values() if len(g) > 1),
+                  key=lambda g: g[0].lower())
+
+
+def apart(groups, name_of):
+    """The groups whose names don't all end up as one exercise."""
+    return [g for g in groups if len({name_of(n) for n in g}) > 1]
+
+
+def list_groups(groups):
+    return "; ".join(" = ".join(g) for g in groups)
 
 
 def file_date_order(rows, requested):
@@ -401,8 +454,13 @@ def write_exercise_list(parsed, path, input_path, assisted_positive):
     print("Fill in the sparkyfitness_name column with the exact name of the "
           "SparkyFitness exercise to use (same spelling and capitals), or leave it "
           "empty to keep the Hevy name. Several Hevy names can share one "
-          "SparkyFitness name. In Excel, save it as 'CSV UTF-8'. Then run the "
-          "conversion again with --exercise-map " + shown)
+          "SparkyFitness name: their sets become one exercise. In Excel, save it as "
+          "'CSV UTF-8'. Then run the conversion again with --exercise-map " + shown)
+    alike = apart(similar_names(traits), lambda n: filled.get(n) or n)
+    if alike:
+        print("These Hevy names look like the same exercise: " + list_groups(alike)
+              + ". To make each group one exercise in SparkyFitness, give its names "
+              "the same sparkyfitness_name.")
 
 
 def main():
@@ -617,6 +675,13 @@ def main():
                   "again, so their sets stay apart: " + "; ".join(
                       f"{h} -> {mapping[h]} (but {mapping[h]} -> {mapping[mapping[h]]})"
                       for h in chained))
+    hevy_to_name = {p["hevy_name"]: p["name"] for p in parsed}
+    alike = apart(similar_names(hevy_to_name), hevy_to_name.get)
+    if alike:
+        print("Warning: these Hevy names look like the same exercise but stay separate "
+              "exercises: " + list_groups(alike) + ". To join them, give each group the "
+              "same sparkyfitness_name in the exercise table (create it with "
+              "--list-exercises) and convert again.")
     labels = {
         "cardio": "Cardio", "timed": "Timed holds", "bodyweight": "Bodyweight",
         "assisted": "Assisted (assistance written as a negative weight)",

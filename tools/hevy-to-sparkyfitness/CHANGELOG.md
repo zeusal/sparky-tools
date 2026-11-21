@@ -2,6 +2,11 @@
 
 All notable changes to Hevy to SparkyFitness. Versions follow the `x.y` scheme described in [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
+## 1.2
+
+- New: points out Hevy exercises that look like the same one, written with other capitals, hyphens or spaces, as a plural, or with the words in another order (*Pull Up*, *Pull-up*, *Pullups*; *Bench Press (Barbell)*, *Barbell Bench Press*). `--list-exercises` lists them, and the conversion warns while they would stay separate exercises. Giving them the same `sparkyfitness_name` joins them into one exercise before importing, since SparkyFitness can't merge exercises afterwards.
+- New: the easy version's table joins look-alike exercises with one click and shows which Hevy exercises become one exercise in SparkyFitness.
+
 ## 1.1
 
 - New: an easy version at https://zeusal.github.io/sparky-tools/hevy-to-sparkyfitness/ for people who don't use the command line. It walks through the whole migration in the browser, on a computer or a phone, with nothing to install. It runs this same script with Pyodide, so its files are identical to the command line's, and the export never leaves the device. The command-line guide moved to https://zeusal.github.io/sparky-tools/hevy-to-sparkyfitness/command-line/.

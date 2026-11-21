@@ -505,6 +505,58 @@ class MoreCommandLineTests(TempDirTestCase):
         self.assertEqual(rows["Typo Name"]["sets"], "0")
 
 
+class SimilarNamesTests(TempDirTestCase):
+    def test_groups(self):
+        names = ["Pull Up", "Pull-up", "Pullups", "pull ups", "Pull Up (Assisted)",
+                 "Bench Press (Barbell)", "Barbell Bench Press", "Bench Press (Dumbbell)",
+                 "Lat Pulldown (Cable)", "Lat Pull Down (Cable)", "Crunches", "Crunch",
+                 "Press", "Plank", "💪", "🔥", "引体向上"]
+        self.assertEqual(hevy.similar_names(names), [
+            ["Barbell Bench Press", "Bench Press (Barbell)"],
+            ["Crunch", "Crunches"],
+            ["Lat Pull Down (Cable)", "Lat Pulldown (Cable)"],
+            ["Pull Up", "pull ups", "Pull-up", "Pullups"],
+        ])
+        self.assertEqual(hevy.similar_names(["Squat", "Front Squat", "Squat (Smith Machine)"]), [])
+
+    def test_name_words(self):
+        self.assertEqual(hevy.name_words("Pull-Ups"), ["pull", "up"])
+        self.assertEqual(hevy.name_words("Crunches"), ["crunch"])
+        self.assertEqual(hevy.name_words("Cross Press"), ["cross", "press"])
+        self.assertEqual(hevy.name_words("Élévation latérale"), ["elevation", "laterale"])
+
+    def test_listing_names_look_alikes_until_they_share_a_name(self):
+        export = self.copy_fixture("similar_names.csv", "export.csv")
+        code, out, err = run(export, "--list-exercises")
+        self.assertEqual(code, 0, err)
+        self.assertIn("These Hevy names look like the same exercise: Barbell Bench Press = "
+                      "Bench Press (Barbell); Pull Up = Pull-up.", out)
+        self.copy_fixture("similar_names_table.csv", "export_exercises.csv")
+        code, out, err = run(export, "--list-exercises")
+        self.assertEqual(code, 0, err)
+        self.assertNotIn("look like the same exercise", out)
+
+    def test_converting_warns_while_look_alikes_stay_apart(self):
+        code, out, err = run(FIXTURES / "similar_names.csv", *KG_KM, "-o", self.tmp / "a.csv")
+        self.assertEqual(code, 0, err)
+        self.assertIn("Warning: these Hevy names look like the same exercise but stay separate "
+                      "exercises: Barbell Bench Press = Bench Press (Barbell); Pull Up = Pull-up.", out)
+        table = self.tmp / "half.csv"
+        table.write_text("hevy_name,sparkyfitness_name\nPull-up,Pull Up\n", encoding="utf-8")
+        code, out, err = run(FIXTURES / "similar_names.csv", *KG_KM, "--exercise-map", table,
+                             "-o", self.tmp / "b.csv")
+        self.assertEqual(code, 0, err)
+        self.assertIn("stay separate exercises: Barbell Bench Press = Bench Press (Barbell). ", out)
+        code, out, err = run(FIXTURES / "similar_names.csv", *KG_KM, "--exercise-map",
+                             FIXTURES / "similar_names_table.csv", "-o", self.tmp / "c.csv")
+        self.assertEqual(code, 0, err)
+        self.assertNotIn("look like the same exercise", out)
+        # Joined on one day: one entry, with its sets numbered 1..n.
+        rows = [r for r in read_rows(self.tmp / "c.csv")
+                if r["entry_date"] == "2026-11-18" and r["exercise_name"] == "Pull Up"]
+        self.assertEqual([r["set_number"] for r in rows], ["1", "2", "3", "4"])
+
+
 class FixtureUseTests(unittest.TestCase):
     def test_every_fixture_is_used(self):
         source = Path(__file__).read_text(encoding="utf-8")

@@ -219,6 +219,7 @@ table.names td { min-width: 200px; }
 .hint { font-size: 0.82rem; color: var(--muted); margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
 .hint.ok { color: var(--ok); }
 .hint.warn { color: var(--warn-ink); }
+.hint .join { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; color: var(--muted); }
 .chip { font: 600 0.8rem var(--font-body); color: var(--accent); background: var(--accent-soft); border: 1px solid transparent; border-radius: 999px; padding: 2px 10px; cursor: pointer; text-align: left; overflow-wrap: anywhere; }
 .chip:hover { border-color: var(--accent); }
 .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
