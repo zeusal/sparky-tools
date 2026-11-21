@@ -27,12 +27,12 @@ The [easy version](https://zeusal.github.io/sparky-tools/hevy-to-sparkyfitness/)
 
 1. Open your Hevy export on the page.
 2. Pick the weight and distance units set in SparkyFitness.
-3. Optionally, choose SparkyFitness names for your exercises in a table. Paste the names of your SparkyFitness exercises once to get suggestions and a spelling check; the page also suggests names from [Free Exercise DB](https://github.com/yuhonas/free-exercise-db), whose exercises SparkyFitness can add with their names unchanged.
+3. Optionally, choose SparkyFitness names for your exercises in a table. Type the names of your SparkyFitness exercises once (SparkyFitness doesn't let you select text in its exercise list, but you can copy a name from an exercise's edit window) to get suggestions and a spelling check; the page also suggests names from [Free Exercise DB](https://github.com/yuhonas/free-exercise-db), whose exercises SparkyFitness can add with their names unchanged.
 4. Press **Convert**, download the file and import it into SparkyFitness (see [Quick start](#quick-start), step 4).
 
 The page runs this exact script with [Pyodide](https://pyodide.org) (Python compiled to WebAssembly), so it writes the same file as the command line, byte for byte. Your export is read inside the browser and never uploaded. The first visit downloads the converter's engine (about 14 MB uncompressed), which your browser then keeps.
 
-Its exercise table can be downloaded and loaded again, and it has the same format as `--list-exercises`, so you can switch between the page and the command line. The page remembers your units, your pasted names and your chosen names in this browser only.
+Its exercise table can be downloaded and loaded again, and it has the same format as `--list-exercises`, so you can switch between the page and the command line. The page remembers your units, your list of SparkyFitness names and your chosen names in this browser only.
 
 ## Requirements
 
@@ -112,7 +112,7 @@ The commands below are for macOS and Linux with an app export. On Windows, write
    | `sets`, `last_done` | How often and how recently you did it, to help you decide. |
    | `kind` | How the script will set the exercise up: `weights`, `bodyweight`, `assisted`, `cardio` or `timed`. |
 
-2. Fill in `sparkyfitness_name` in Excel, LibreOffice, Numbers or a text editor. Copy names from SparkyFitness to get the spelling right. Several Hevy names can point to the same exercise. Save as **CSV UTF-8**. If Excel shows each row in a single column, open the file with *Data → From Text/CSV*, or use LibreOffice or Google Sheets.
+2. Fill in `sparkyfitness_name` in Excel, LibreOffice, Numbers or a text editor. Use the names exactly as SparkyFitness shows them, capitals included. Its exercise list doesn't let you select text, so type them, or open an exercise (double-click it, or tap it on a phone) and copy the name from its edit window. Several Hevy names can point to the same exercise. Save as **CSV UTF-8**. If Excel shows each row in a single column, open the file with *Data → From Text/CSV*, or use LibreOffice or Google Sheets.
 3. Convert with the table:
 
    ```bash

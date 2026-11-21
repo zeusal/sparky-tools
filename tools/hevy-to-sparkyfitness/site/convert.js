@@ -3,7 +3,7 @@
 // Runs the same hevy_to_sparkyfitness.py as the command line, inside Pyodide
 // (Python compiled to WebAssembly), so both give identical files. The user's
 // export is written to Pyodide's in-memory file system and never leaves the
-// browser. Only the unit choices, the pasted exercise names and the chosen
+// browser. Only the unit choices, your list of exercise names and the chosen
 // SparkyFitness names are remembered, in this browser's storage.
 (function () {
   'use strict';
@@ -275,7 +275,7 @@
     state.userLower = new Map();
     state.userNames.forEach(function (n) { state.userLower.set(n.toLowerCase(), n); });
     els.userNamesCount.textContent = state.userNames.length
-      ? state.userNames.length + ' names pasted.' : '';
+      ? state.userNames.length + ' names in your list.' : '';
     els.applySuggestions.disabled = state.userNames.length === 0;
     rebuildCandidates();
     state.rows.forEach(function (row) { row.suggestion = bestSuggestion(row.hevy); updateHint(row); });
@@ -333,7 +333,7 @@
       hint.appendChild(button('Use “' + exact + '”', function () { setTarget(row, exact); row.input.focus(); }));
     } else if (state.userNames.length) {
       hint.classList.add('warn');
-      text('Not in your pasted names. Check the spelling, or it becomes a new exercise.');
+      text('Not in your list of SparkyFitness names. Check the spelling, or it becomes a new exercise.');
     } else if (state.fedbSet.has(value)) {
       text('Free Exercise DB name.');
     } else {

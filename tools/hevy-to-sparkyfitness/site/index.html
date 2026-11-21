@@ -105,9 +105,10 @@
   <p class="status" id="names-empty">Choose your Hevy file in step 1 to see its exercises here.</p>
   <div class="stack" id="names-tools" hidden>
     <details class="paste" id="paste-box">
-      <summary>First, paste the names of your SparkyFitness exercises (recommended)</summary>
+      <summary>First, list the names of your SparkyFitness exercises (recommended)</summary>
       <div class="body">
-        <p>In SparkyFitness, open <span class="path">Exercises</span>, copy the names of your exercises and paste them here, one per line. The table below then suggests the right name for each Hevy exercise and warns you about typos. This list stays in this browser.</p>
+        <p>Type here, one per line, the names of the SparkyFitness exercises you also did in Hevy, exactly as they appear in SparkyFitness under <span class="path">Exercises</span>. You only need the ones you want your Hevy history joined to. The table below then suggests the right name for each Hevy exercise and warns you about typos. This list stays in this browser.</p>
+        <p>SparkyFitness doesn't let you select text in its exercise list. To copy a name instead of typing it, open the exercise there (double-click it on a computer, tap it on a phone), copy it from the <span class="path">Name</span> box and close the window with <span class="path">Cancel</span>.</p>
         <label class="visually-hidden" for="user-names">Your SparkyFitness exercise names</label>
         <textarea id="user-names" rows="6" spellcheck="false" placeholder="Barbell Bench Press&#10;Pull-up&#10;Running"></textarea>
         <p class="status" id="user-names-count"></p>
@@ -129,7 +130,7 @@
         <tbody id="names-body"></tbody>
       </table>
     </div>
-    <p class="status">Leave a name empty to keep the Hevy name. Suggestions come from your pasted names and from <a href="https://github.com/yuhonas/free-exercise-db">Free Exercise DB</a>, the exercise list SparkyFitness can add exercises from. A suggestion is only used if you click it.</p>
+    <p class="status">Leave a name empty to keep the Hevy name. Suggestions come from your list of names and from <a href="https://github.com/yuhonas/free-exercise-db">Free Exercise DB</a>, the exercise list SparkyFitness can add exercises from. A suggestion is only used if you click it.</p>
     <details class="paste">
       <summary>Save these names for later</summary>
       <div class="body">
@@ -231,7 +232,7 @@
     <details>
       <summary>Is my data safe?</summary>
       <div class="body">
-        <p>Your file is read and converted inside your browser and is never uploaded. This page only remembers, in this browser, your units, the exercise names you pasted and the names you chose.</p>
+        <p>Your file is read and converted inside your browser and is never uploaded. This page only remembers, in this browser, your units, your list of SparkyFitness exercise names and the names you chose.</p>
         <div class="actions">
           <button type="button" class="btn secondary" id="forget">Forget them now</button>
           <span class="status" id="forget-status" role="status"></span>
