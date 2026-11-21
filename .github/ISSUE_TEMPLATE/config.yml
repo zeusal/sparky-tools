@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Problem with SparkyFitness itself
+    url: https://github.com/CodeWithCJ/SparkyFitness/issues
+    about: Bugs and requests for the SparkyFitness app go to its own repository.

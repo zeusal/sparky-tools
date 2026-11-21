@@ -1,0 +1,31 @@
+name: Tool idea
+description: Suggest a new tool or a bigger change to an existing one.
+labels: [tool idea]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would it solve?
+      description: Who needs it, and what do they have to do today without it?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would the tool do?
+      description: Its input, its output, and how someone would use it.
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Data formats involved
+      description: Which exports or files would it read and write? Link to their documentation if there is any.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: SparkyFitness itself doesn't already do this.
+          required: true
+        - label: I'm willing to help build or test it.

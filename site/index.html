@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sparky Tools</title>
+<meta name="description" content="Unofficial community tools for SparkyFitness users. They run on your own computer.">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="./">Sparky Tools</a>
+    <nav aria-label="Links">
+      <a href="{{REPO_URL}}">GitHub</a>
+      <a href="https://github.com/CodeWithCJ/SparkyFitness">SparkyFitness</a>
+    </nav>
+  </div>
+</div>
+
+<main class="page">
+  <header class="intro">
+    <span class="eyebrow">Community tools</span>
+    <h1>Sparky Tools</h1>
+    <p class="lead">Small, unofficial tools for people who use SparkyFitness, the self-hosted fitness and nutrition tracker. Each one solves a single practical problem, such as bringing your history over from another app.</p>
+  </header>
+
+  <section class="stack" aria-labelledby="tools-title">
+    <h2 id="tools-title">Tools</h2>
+    <div class="tools">
+{{TOOLS}}
+    </div>
+  </section>
+
+  <section class="stack" aria-labelledby="how-title">
+    <h2 id="how-title">How the tools are built</h2>
+    <div class="principles">
+      <div><strong>Your data stays with you</strong>Tools run on your own computer and upload nothing.</div>
+      <div><strong>Few requirements</strong>Python's standard library where possible, so there is nothing else to install.</div>
+      <div><strong>Safe by default</strong>Your original file is never overwritten, and ambiguous input stops with a clear message.</div>
+      <div><strong>Documented and tested</strong>Every tool has full documentation, a changelog and automated tests.</div>
+    </div>
+  </section>
+
+  <section class="stack" aria-labelledby="help-title">
+    <h2 id="help-title">Questions and ideas</h2>
+    <p>Found a problem, or have an idea for a tool? <a href="{{REPO_URL}}/issues/new/choose">Open an issue</a>. Please don't attach your real exports: they contain personal health data.</p>
+  </section>
+
+  <footer class="site-footer">
+    <p>Not part of the SparkyFitness project, and not affiliated with it or with the apps the tools read data from.</p>
+    <p>Free for non-commercial use. See the <a href="{{REPO_URL}}/blob/main/LICENSE">license</a>.</p>
+  </footer>
+</main>
+</body>
+</html>

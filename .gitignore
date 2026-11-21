@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Website build output
+_site/
+
+# Personal exports and converted files must never be committed.
+# Synthetic test files live in tools/*/tests/ and are kept.
+*.csv
+!tools/*/tests/**/*.csv
+
+# Editors and OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

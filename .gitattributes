@@ -1,0 +1,5 @@
+* text=auto eol=lf
+
+# Test files reproduce real exports byte for byte: keep CRLF, UTF-16 and BOMs.
+tools/*/tests/fixtures/** -text
+tools/*/tests/expected/** -text
