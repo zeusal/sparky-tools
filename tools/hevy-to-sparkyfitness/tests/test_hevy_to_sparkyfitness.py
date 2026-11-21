@@ -300,7 +300,7 @@ class ExerciseTableTests(TempDirTestCase):
                              FIXTURES / "exercise_table_filled.csv", "-o", self.tmp / "x.csv")
         self.assertEqual(code, 0, err)
         self.assertIn("4 Hevy names renamed to 2 SparkyFitness names", out)
-        self.assertIn("not in this export (check the spelling): Typo Name", out)
+        self.assertIn("not in this export (kept from an older export, or misspelled): Typo Name", out)
 
     def write_table(self, rows):
         table = self.tmp / "table.csv"

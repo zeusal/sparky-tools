@@ -1,7 +1,8 @@
 // Browser tests for the easy, in-browser version (site/index.html). The page runs
 // the same Python script with Pyodide, so its downloads must be byte-identical
 // to the command line's expected files in tests/expected/.
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 
@@ -146,6 +147,56 @@ export default async function ({ browser, baseUrl, toolDir }) {
       await page.reload();
       assert.equal(await page.isChecked('#w-lbs'), true, 'units are remembered');
       assert.equal(await page.inputValue('#user-names'), 'Pull-up\n', 'pasted names are remembered');
+    } finally {
+      await context.close();
+    }
+  }
+
+  // A file made before a name changed is never offered; names loaded for
+  // exercises not in this export are kept; an exact Free Exercise DB name
+  // gets no other suggestion.
+  {
+    const { page, context } = await freshPage();
+    try {
+      await open(page, 'app_en_kg_km.csv');
+      await page.click('#convert');
+      await page.waitForSelector('#result:not([hidden])');
+      const pull = page.getByLabel('SparkyFitness name for Pull Up', { exact: true });
+      await pull.fill('Pull-up');
+      assert.equal(await page.isHidden('#result'), true, 'an out-of-date download is still offered');
+
+      const plankHint = page.locator(`#${await page.getByLabel('SparkyFitness name for Plank', { exact: true }).getAttribute('aria-describedby')}`);
+      assert.equal(await plankHint.locator('button').count(), 0, 'Plank is a Free Exercise DB name: no suggestion');
+
+      const dir = await mkdtemp(path.join(tmpdir(), 'hevy-web-'));
+      const table = path.join(dir, 'old_table.csv');
+      await writeFile(table, 'hevy_name,sparkyfitness_name,sets,last_done,kind\r\nRunning,Run,1,2026-11-05,cardio\r\nOld Hevy Exercise,Sparky Old,0,,\r\n');
+      await page.click('text=Save these names for later');
+      await page.setInputFiles('#load-table', table);
+      await page.waitForFunction(() => /loaded 1 names/.test(document.getElementById('names-summary').textContent));
+      assert.equal(await page.getByLabel('SparkyFitness name for Running', { exact: true }).inputValue(), 'Run');
+      const [download] = await Promise.all([page.waitForEvent('download'), page.click('#save-table')]);
+      const saved = (await readFile(await download.path())).toString('utf8');
+      assert.match(saved, /\r\nOld Hevy Exercise,Sparky Old,0,,\r\n/, 'a loaded name for another export was dropped');
+    } finally {
+      await context.close();
+    }
+  }
+
+  // If the engine fails to download, the page says so and the next try works.
+  {
+    const context = await browser.newContext({ acceptDownloads: true });
+    const page = await context.newPage();
+    try {
+      let block = true;
+      await page.route('**/pyodide.asm.wasm', (route) => (block ? route.abort() : route.continue()));
+      await page.goto(pageUrl);
+      await open(page, 'app_en_kg_km.csv');
+      assert.equal(await page.isVisible('#file-error'), true, 'no error after a failed engine download');
+      assert.match(await page.textContent('#file-error'), /could not start/);
+      block = false;
+      await page.setInputFiles('#file-input', path.join(fixtures, 'app_en_lbs_miles.csv'));
+      await page.waitForFunction(() => document.getElementById('file-status').textContent.startsWith('✓'), null, { timeout: 120000 });
     } finally {
       await context.close();
     }

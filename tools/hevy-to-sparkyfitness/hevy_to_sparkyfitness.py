@@ -54,6 +54,7 @@ Only the Python standard library is used (Python 3.8 or newer).
 """
 import argparse
 import csv
+import functools
 import io
 import os
 import re
@@ -148,6 +149,7 @@ def plain(text):
     return "".join(c for c in text if not unicodedata.combining(c)).replace(".", "")
 
 
+@functools.lru_cache(maxsize=None)
 def has_word(name, words):
     name = plain(name)
     return any(re.search(r"\b" + re.escape(w), name) for w in words)
@@ -606,8 +608,8 @@ def main():
             print("Warning: the exercise table was not saved as UTF-8; names with "
                   "accents or emojis may not match. Save it as 'CSV UTF-8'.")
         if unknown:
-            print("Warning: these names in the table are not in this export (check "
-                  "the spelling): " + ", ".join(unknown))
+            print("Warning: these names in the table are not in this export (kept "
+                  "from an older export, or misspelled): " + ", ".join(unknown))
         chained = sorted(h for h in used if mapping[h] in hevy_names
                          and mapping.get(mapping[h], mapping[h]) != mapping[h])
         if chained:

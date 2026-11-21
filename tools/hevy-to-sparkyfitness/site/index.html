@@ -57,7 +57,7 @@
     <span class="dropzone-hint">Usually called workout_data.csv (app) or workouts.csv (website). On a computer you can also drop it here.</span>
   </label>
   <p class="status" id="file-status" role="status" aria-live="polite"></p>
-  <div class="note error" id="file-error" hidden></div>
+  <div class="note error" id="file-error" role="alert" hidden></div>
 </section>
 
 <section class="panel stack" aria-labelledby="units-title">
@@ -122,6 +122,7 @@
       <input type="search" id="filter" placeholder="Type part of a name">
     </div>
     <p class="status" id="names-summary"></p>
+    <div class="note error" id="names-error" role="alert" hidden></div>
     <div class="table-wrap">
       <table class="names">
         <thead><tr><th scope="col">Exercise in Hevy</th><th scope="col">Name in SparkyFitness</th></tr></thead>
@@ -150,7 +151,7 @@
     <button type="button" class="btn primary" id="convert" disabled>Create the file</button>
     <span class="status" id="convert-status" role="status" aria-live="polite"></span>
   </div>
-  <div class="note error" id="convert-error" hidden></div>
+  <div class="note error" id="convert-error" role="alert" hidden></div>
   <div class="stack" id="result" hidden>
     <div class="actions">
       <a class="btn primary" id="download" href="#" download>Download</a>
@@ -241,7 +242,7 @@
 </section>
 
 <footer class="site-footer">
-  <p>Comfortable with a terminal? The <a href="command-line/">command-line version</a> does the same with a small Python script. This page runs that same script in your browser (version {{VERSION}}, with <a href="https://pyodide.org">Pyodide</a>), so both give the same file. <a href="{{TOOL_URL}}/CHANGELOG.md">What's new</a>.</p>
+  <p>Comfortable with a terminal? The <a href="command-line/">command-line version</a> does the same with a small Python script. This page runs that same script in your browser (version {{VERSION}}, with <a href="https://pyodide.org">Pyodide</a>; <a href="../vendor/pyodide/NOTICE.txt">licenses</a>), so both give the same file. <a href="{{TOOL_URL}}/CHANGELOG.md">What's new</a>.</p>
   <p>Community tool. Not affiliated with Hevy or with the SparkyFitness project. Found a problem? <a href="{{REPO_URL}}/issues/new/choose">Open an issue</a>.</p>
 </footer>
 

@@ -172,10 +172,19 @@ def add_pyodide(out, cache):
                 sys.exit(f"Pyodide archive: pyodide/{name} is not a file")
             with tar.extractfile(member) as src, open(target / name, "wb") as dst:
                 shutil.copyfileobj(src, dst)
+    python = json.loads((target / "pyodide-lock.json").read_text(encoding="utf-8"))["info"]["python"]
+    python_minor = ".".join(python.split(".")[:2])
     (target / "NOTICE.txt").write_text(
-        f"Pyodide {config['version']} (https://pyodide.org), licensed under the "
-        f"Mozilla Public License 2.0: {config['license_url']}\n"
-        "Unmodified files from the official pyodide-core release.\n",
+        f"Pyodide {config['version']} (https://pyodide.org), Mozilla Public License 2.0:\n"
+        f"{config['license_url']}\n"
+        f"Source code: https://github.com/pyodide/pyodide/tree/{config['version']}\n"
+        "These are unmodified files from the official pyodide-core release.\n\n"
+        f"pyodide.asm.wasm and python_stdlib.zip contain CPython {python}, Copyright (c) 2001\n"
+        "Python Software Foundation; All Rights Reserved, under the PSF License Agreement,\n"
+        "with the software it incorporates under the licenses listed at\n"
+        f"https://docs.python.org/{python_minor}/license.html\n\n"
+        "pyodide.asm.js and pyodide.asm.wasm also contain the Emscripten runtime (MIT):\n"
+        "https://github.com/emscripten-core/emscripten/blob/main/LICENSE\n",
         encoding="utf-8")
 
 

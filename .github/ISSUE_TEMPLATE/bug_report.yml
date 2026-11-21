@@ -18,29 +18,29 @@ body:
     id: version
     attributes:
       label: Tool version
-      description: Run the tool with `--version`.
-      placeholder: "1.0"
+      description: Run the tool with `--version`, or see the footer of its web page.
+      placeholder: "1.1"
     validations:
       required: true
   - type: input
     id: environment
     attributes:
-      label: Computer and Python version
-      description: For example "Windows 11, Python 3.12" (run `py --version` or `python3 --version`).
+      label: Computer, and browser or Python version
+      description: For example "Android, Chrome (web page)" or "Windows 11, Python 3.12".
     validations:
       required: true
   - type: textarea
     id: command
     attributes:
-      label: Command you ran
-      render: shell
+      label: What you did
+      description: The options you chose on the web page, or the command you ran.
     validations:
       required: true
   - type: textarea
     id: output
     attributes:
-      label: What the tool printed
-      description: Copy the whole output, including any error.
+      label: What the page showed or the tool printed
+      description: Copy the whole message, including any error.
       render: text
     validations:
       required: true
