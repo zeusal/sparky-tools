@@ -11,9 +11,9 @@ Each tool solves one practical problem that SparkyFitness itself doesn't cover, 
 
 | Tool | What it does | Guide | Requires |
 | --- | --- | --- | --- |
-| [Hevy to SparkyFitness](tools/hevy-to-sparkyfitness/) | Converts a Hevy workout export (CSV, free or Pro accounts) into a file that SparkyFitness's Workout History importer reads, keeping sets, units and exercise types. | [Step-by-step guide](https://zeusal.github.io/Sparky-tools/hevy-to-sparkyfitness/) | Python 3.8+ |
+| [Hevy to SparkyFitness](tools/hevy-to-sparkyfitness/) | Converts a Hevy workout export (CSV, free or Pro accounts) into a file that SparkyFitness's Workout History importer reads, keeping sets, units and exercise types. | [Step-by-step guide](https://zeusal.github.io/sparky-tools/hevy-to-sparkyfitness/) | Python 3.8+ |
 
-Each tool's folder has a `README.md` with its full documentation. Tools with a step-by-step guide also have a page on the [Sparky Tools website](https://zeusal.github.io/Sparky-tools/).
+Each tool's folder has a `README.md` with its full documentation. Tools with a step-by-step guide also have a page on the [Sparky Tools website](https://zeusal.github.io/sparky-tools/).
 
 ## How the tools are built
 
@@ -28,7 +28,7 @@ Each tool's folder has a `README.md` with its full documentation. Tools with a s
 2. Download the tool's script from its folder (or from the guide page).
 3. Run it as its README describes.
 
-Always keep a copy of your original export. If a tool's output doesn't look right, don't import it; [open an issue](https://github.com/zeusal/Sparky-tools/issues/new/choose) instead.
+Always keep a copy of your original export. If a tool's output doesn't look right, don't import it; [open an issue](https://github.com/zeusal/sparky-tools/issues/new/choose) instead.
 
 ## Repository layout
 

@@ -4,8 +4,8 @@ Thanks for helping. This repository collects small, unofficial tools for [Sparky
 
 ## Before you start
 
-- **Bug in a tool:** open a [bug report](https://github.com/zeusal/Sparky-tools/issues/new?template=bug_report.yml).
-- **New tool or a bigger change:** open a [tool idea](https://github.com/zeusal/Sparky-tools/issues/new?template=tool_idea.yml) first and wait for a reply, so nobody builds something that won't be merged.
+- **Bug in a tool:** open a [bug report](https://github.com/zeusal/sparky-tools/issues/new?template=bug_report.yml).
+- **New tool or a bigger change:** open a [tool idea](https://github.com/zeusal/sparky-tools/issues/new?template=tool_idea.yml) first and wait for a reply, so nobody builds something that won't be merged.
 - **Never share real personal data.** Exports from fitness apps contain health data. Use synthetic files in tests, issues and pull requests, or a few rows with the values changed.
 
 ## What a tool looks like
@@ -19,7 +19,7 @@ Each tool lives in its own folder under `tools/`, named in lowercase with hyphen
 | `CHANGELOG.md` | Yes | One section per version, newest first, headed `## <version>`. |
 | `<script>.py` | Yes | The tool. It defines `VERSION = "x.y"` near the top. |
 | `tests/` | Yes | `test_*.py` files run with `unittest`, plus synthetic test files. |
-| `site/index.html` | No | A step-by-step guide page, published at `https://zeusal.github.io/Sparky-tools/<tool-name>/`. |
+| `site/index.html` | No | A step-by-step guide page, published at `https://zeusal.github.io/sparky-tools/<tool-name>/`. |
 
 A tool's README covers, in this order: what it does and why, requirements, quick start, every option, what the output contains and what it leaves out, troubleshooting, privacy, and how to run its tests.
 

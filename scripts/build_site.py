@@ -22,7 +22,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-REPO_URL = "https://github.com/zeusal/Sparky-tools"
+REPO_URL = "https://github.com/zeusal/sparky-tools"
 MANIFEST_KEYS = ("name", "summary", "script", "requires", "status")
 STATUSES = ("stable", "beta", "deprecated")
 

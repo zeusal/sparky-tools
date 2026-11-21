@@ -4,7 +4,7 @@ Moves your workout history from [Hevy](https://www.hevyapp.com/) to [SparkyFitne
 
 Hevy lets every account, free or Pro, export its workouts as a CSV file. SparkyFitness can import workout history from CSV, but not Hevy's file as it comes: the dates carry a time of day, the columns have other names, set numbers start at 0, and durations are in seconds. This script rewrites the file into the columns of SparkyFitness's Workout History importer, on your own computer.
 
-**Prefer a guided walkthrough?** Follow the [step-by-step guide](https://zeusal.github.io/Sparky-tools/hevy-to-sparkyfitness/). It builds the commands for your system and units.
+**Prefer a guided walkthrough?** Follow the [step-by-step guide](https://zeusal.github.io/sparky-tools/hevy-to-sparkyfitness/). It builds the commands for your system and units.
 
 ## Contents
 

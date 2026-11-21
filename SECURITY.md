@@ -4,7 +4,7 @@ The tools in this repository handle personal health data: workouts, body measure
 
 ## Reporting a problem
 
-If you find a security problem, or a way a tool could expose someone's data, please report it privately through [GitHub's private vulnerability reporting](https://github.com/zeusal/Sparky-tools/security/advisories/new) instead of opening a public issue.
+If you find a security problem, or a way a tool could expose someone's data, please report it privately through [GitHub's private vulnerability reporting](https://github.com/zeusal/sparky-tools/security/advisories/new) instead of opening a public issue.
 
 ## Your data
 
